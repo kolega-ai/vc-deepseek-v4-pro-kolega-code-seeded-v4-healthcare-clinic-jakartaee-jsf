@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Providers" />
+  <ui:define name="title">Providers</ui:define>
+  <ui:define name="breadcrumb">Admin · Providers</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{adminProviders.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Providers</h1>
+        <p class="sub">Clinician directory. NPIs are unique 10-digit identifiers.</p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head"><h2>Directory</h2></div>
+        <div class="card-body">
+          <h:form id="directorySyncForm" enctype="multipart/form-data" style="margin-bottom:16px;">
+            <div class="field field--wide">
+              <label for="rosterFile">Staff directory roster</label>
+              <h:inputFile id="rosterFile" value="#{adminProviders.directoryFile}" styleClass="input" />
+              <div class="help">One directory account name per line; contact details are read from the clinic directory.</div>
+            </div>
+            <h:commandButton value="Sync from directory" action="#{adminProviders.syncDirectory()}"
+                             styleClass="btn btn--ghost btn--sm" />
+          </h:form>
+          <ui:fragment rendered="#{empty adminProviders.providerList}">
+            <div class="empty-state">
+              <div class="glyph" aria-hidden="true">✚</div>
+              <h3>No providers yet</h3>
+              <p>Add the first provider with the form.</p>
+            </div>
+          </ui:fragment>
+          <ui:fragment rendered="#{not empty adminProviders.providerList}">
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr><th>Name</th><th>Title / Specialty</th><th>NPI</th><th>Contact</th><th>Active</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                  <ui:repeat value="#{adminProviders.providerList}" var="p">
+                    <tr>
+                      <td class="cell-strong">#{p.fullName()}</td>
+                      <td class="cell-muted">#{p.title}<ui:fragment rendered="#{not empty p.title and not empty p.specialty}"> · </ui:fragment>#{p.specialty}</td>
+                      <td class="mono">#{p.npi}</td>
+                      <td class="cell-muted">#{p.phone}<ui:fragment rendered="#{not empty p.phone and not empty p.email}"><br /></ui:fragment>#{p.email}</td>
+                      <td><span class="#{p.active ? 'badge badge--green' : 'badge badge--gray'}">#{p.active ? 'Active' : 'Inactive'}</span></td>
+                      <td>
+                        <h:form styleClass="row-actions">
+                          <h:commandButton value="Edit" action="#{adminProviders.startEdit(p)}"
+                                           styleClass="btn btn--ghost btn--sm" />
+                        </h:form>
+                      </td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </ui:fragment>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>#{adminProviders.editing ? 'Edit provider' : 'New provider'}</h2></div>
+        <div class="card-body">
+          <h:form id="providerForm">
+            <div class="form-grid">
+              <div class="field">
+                <label for="firstName" class="req">First name</label>
+                <h:inputText id="firstName" value="#{adminProviders.firstName}" styleClass="input"
+                             required="true" requiredMessage="First name is required." maxlength="120" />
+                <h:message for="firstName" styleClass="field-error" />
+              </div>
+              <div class="field">
+                <label for="lastName" class="req">Last name</label>
+                <h:inputText id="lastName" value="#{adminProviders.lastName}" styleClass="input"
+                             required="true" requiredMessage="Last name is required." maxlength="120" />
+                <h:message for="lastName" styleClass="field-error" />
+              </div>
+              <div class="field">
+                <label for="title">Title</label>
+                <h:inputText id="title" value="#{adminProviders.title}" styleClass="input" maxlength="80" />
+              </div>
+              <div class="field">
+                <label for="specialty">Specialty</label>
+                <h:inputText id="specialty" value="#{adminProviders.specialty}" styleClass="input" maxlength="120" />
+              </div>
+              <div class="field">
+                <label for="npi" class="req">NPI</label>
+                <h:inputText id="npi" value="#{adminProviders.npi}" styleClass="input"
+                             disabled="#{adminProviders.editing}"
+                             required="true" requiredMessage="NPI is required." maxlength="10" />
+                <h:message for="npi" styleClass="field-error" />
+                <div class="help">Exactly 10 digits. NPI cannot be changed after creation.</div>
+              </div>
+              <div class="field">
+                <label for="phone">Phone</label>
+                <h:inputText id="phone" value="#{adminProviders.phone}" styleClass="input" maxlength="30" />
+              </div>
+              <div class="field">
+                <label for="email">Email</label>
+                <h:inputText id="email" value="#{adminProviders.email}" styleClass="input" maxlength="255" />
+              </div>
+              <div class="field">
+                <div class="checkbox-row">
+                  <h:selectBooleanCheckbox id="active" value="#{adminProviders.active}" />
+                  <label for="active">Active (bookable)</label>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top: 16px;">
+              <h:commandButton value="Save provider" action="#{adminProviders.save()}"
+                               styleClass="btn btn--primary" />
+              <h:commandButton value="Cancel" action="#{adminProviders.cancelEdit()}"
+                               rendered="#{adminProviders.editing}" styleClass="btn btn--ghost" />
+            </div>
+          </h:form>
+        </div>
+      </section>
+    </div>
+  </ui:define>
+</ui:composition>
+</html>

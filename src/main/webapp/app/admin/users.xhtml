@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Users" />
+  <ui:define name="title">Users</ui:define>
+  <ui:define name="breadcrumb">Admin · Users</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{adminUsers.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Users</h1>
+        <p class="sub">Portal accounts, roles, and access. Role changes revoke the user's active sessions.</p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head"><h2>Invite someone</h2></div>
+        <div class="card-body">
+          <h:form id="inviteForm">
+            <div class="form-grid">
+              <div class="field">
+                <label for="invEmail" class="req">Email address</label>
+                <h:inputText id="invEmail" value="#{adminUsers.inviteEmail}" styleClass="input"
+                             required="true" requiredMessage="Email is required." maxlength="255" />
+                <h:message for="invEmail" styleClass="field-error" />
+              </div>
+              <div class="field">
+                <label for="invName">Full name</label>
+                <h:inputText id="invName" value="#{adminUsers.inviteFullName}" styleClass="input" maxlength="120" />
+              </div>
+              <div class="field">
+                <label for="invRole" class="req">Role</label>
+                <h:selectOneMenu id="invRole" value="#{adminUsers.inviteRole}" styleClass="select">
+                  <f:selectItems value="#{adminUsers.inviteRolesArray}" var="r"
+                                 itemValue="#{r.name()}" itemLabel="#{ux.roleLabel(r.name())}" />
+                </h:selectOneMenu>
+              </div>
+            </div>
+            <div style="margin-top: 16px;">
+              <h:commandButton value="Send invite" action="#{adminUsers.sendInvite()}"
+                               styleClass="btn btn--primary" />
+            </div>
+            <div class="help" style="margin-top: 10px;">The invite link is valid for 7 days and works once.</div>
+          </h:form>
+          <ui:fragment rendered="#{not empty adminUsers.demoLink}">
+            <div class="demo-note">
+              Demo: email is mocked locally, so here is the activation link:<br />
+              <a href="#{adminUsers.demoLink}" class="mono">#{adminUsers.demoLink}</a>
+            </div>
+          </ui:fragment>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>Create account</h2></div>
+        <div class="card-body">
+          <h:form id="createForm">
+            <div class="form-grid">
+              <div class="field">
+                <label for="email" class="req">Email address</label>
+                <h:inputText id="email" value="#{adminUsers.email}" styleClass="input"
+                             required="true" requiredMessage="Email is required." maxlength="255" />
+                <h:message for="email" styleClass="field-error" />
+              </div>
+              <div class="field">
+                <label for="fullName" class="req">Full name</label>
+                <h:inputText id="fullName" value="#{adminUsers.fullName()}" styleClass="input"
+                             required="true" requiredMessage="Full name is required." maxlength="120" />
+                <h:message for="fullName" styleClass="field-error" />
+              </div>
+              <div class="field">
+                <label for="role" class="req">Role</label>
+                <h:selectOneMenu id="role" value="#{adminUsers.role}" styleClass="select">
+                  <f:selectItems value="#{adminUsers.rolesArray}" var="r"
+                                 itemValue="#{r.name()}" itemLabel="#{ux.roleLabel(r.name())}" />
+                </h:selectOneMenu>
+              </div>
+              <div class="field">
+                <label for="phone">Phone</label>
+                <h:inputText id="phone" value="#{adminUsers.phone}" styleClass="input" maxlength="30" />
+              </div>
+              <div class="field">
+                <label for="password" class="req">Password</label>
+                <h:inputSecret id="password" value="#{adminUsers.password}" styleClass="input"
+                               required="true" requiredMessage="Password is required." maxlength="128" />
+                <h:message for="password" styleClass="field-error" />
+                <div class="help">At least 10 characters with uppercase, lowercase, and a digit.</div>
+              </div>
+            </div>
+            <div style="margin-top: 16px;">
+              <h:commandButton value="Create account" action="#{adminUsers.createUser()}"
+                               styleClass="btn btn--primary" />
+            </div>
+          </h:form>
+        </div>
+      </section>
+    </div>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>All accounts</h2>
+        <h:form id="filterForm" styleClass="no-space">
+          <div class="filter-bar">
+            <div class="field">
+              <label for="query">Search</label>
+              <h:inputText id="query" value="#{adminUsers.query}" styleClass="input" maxlength="120"
+                           placeholder="name or email" />
+            </div>
+            <h:commandButton value="Filter" action="#{adminUsers.filter()}" styleClass="btn" />
+          </div>
+        </h:form>
+      </div>
+      <div class="card-body">
+        <ui:fragment rendered="#{empty adminUsers.page.items}">
+          <div class="empty-state">
+            <div class="glyph" aria-hidden="true">◉</div>
+            <h3>No users found</h3>
+            <p>Try a different search or create an account.</p>
+          </div>
+        </ui:fragment>
+        <ui:fragment rendered="#{not empty adminUsers.page.items}">
+          <div class="table-wrap">
+            <table class="data">
+              <thead>
+                <tr><th>Email</th><th>Name</th><th>Role</th><th>Status</th><th>Last login</th><th>Actions</th></tr>
+              </thead>
+              <tbody>
+                <ui:repeat value="#{adminUsers.page.items}" var="u">
+                  <tr>
+                    <td class="cell-strong">#{u.email}</td>
+                    <td>#{u.fullName()}</td>
+                    <td><span class="chip chip--line">#{ux.roleLabel(u.role.name())}</span></td>
+                    <td><span class="#{ux.userStatusBadge(u.status)}">#{u.status.name() == 'ACTIVE' ? 'Active' : 'Disabled'}</span></td>
+                    <td class="cell-muted">#{ux.fmtDateTime(u.lastLoginAt)}</td>
+                    <td>
+                      <h:form styleClass="row-actions">
+                        <h:commandButton value="Edit" action="#{adminUsers.startEdit(u)}"
+                                         styleClass="btn btn--ghost btn--sm" />
+                        <h:commandButton value="Disable" action="#{adminUsers.setDisabled(u.id)}"
+                                         rendered="#{u.status.name() == 'ACTIVE'}"
+                                         pt:data-confirm="Disable this account? Its active sessions will be revoked."
+                                         styleClass="btn btn--danger btn--sm" />
+                        <h:commandButton value="Enable" action="#{adminUsers.setActive(u.id)}"
+                                         rendered="#{u.status.name() != 'ACTIVE'}"
+                                         pt:data-confirm="Re-enable this account?"
+                                         styleClass="btn btn--ghost btn--sm" />
+                      </h:form>
+                    </td>
+                  </tr>
+                </ui:repeat>
+              </tbody>
+            </table>
+          </div>
+          <ui:include src="/WEB-INF/includes/pager.xhtml">
+            <ui:param name="pg" value="#{adminUsers.page}" />
+            <ui:param name="bean" value="#{adminUsers}" />
+          </ui:include>
+        </ui:fragment>
+      </div>
+    </section>
+
+    <ui:fragment rendered="#{adminUsers.editing}">
+      <section class="card">
+        <div class="card-head"><h2>Edit user</h2></div>
+        <div class="card-body">
+          <h:form id="editForm">
+            <div class="form-grid">
+              <div class="field">
+                <label for="editFullName" class="req">Full name</label>
+                <h:inputText id="editFullName" value="#{adminUsers.editFullName}" styleClass="input"
+                             required="true" requiredMessage="Full name is required." maxlength="120" />
+                <h:message for="editFullName" styleClass="field-error" />
+              </div>
+              <div class="field">
+                <label for="editPhone">Phone</label>
+                <h:inputText id="editPhone" value="#{adminUsers.editPhone}" styleClass="input" maxlength="30" />
+              </div>
+              <div class="field">
+                <label for="editRole" class="req">Role</label>
+                <h:selectOneMenu id="editRole" value="#{adminUsers.editRole}" styleClass="select">
+                  <f:selectItems value="#{adminUsers.rolesArray}" var="r"
+                                 itemValue="#{r.name()}" itemLabel="#{ux.roleLabel(r.name())}" />
+                </h:selectOneMenu>
+                <div class="help">Role changes are audited and revoke the user's sessions.</div>
+              </div>
+              <div class="field">
+                <label for="newAdminPassword">New password (reset)</label>
+                <h:inputSecret id="newAdminPassword" value="#{adminUsers.newAdminPassword}"
+                               styleClass="input" maxlength="128" />
+                <div class="help">Leave blank to keep the current password.</div>
+              </div>
+            </div>
+            <div style="margin-top: 16px;">
+              <h:commandButton value="Save changes" action="#{adminUsers.saveEdit()}"
+                               styleClass="btn btn--primary" />
+              <h:commandButton value="Reset password" action="#{adminUsers.adminResetPassword()}"
+                               pt:data-confirm="Reset this user's password? They must sign in again."
+                               styleClass="btn btn--danger" />
+              <h:commandButton value="Issue starter code" action="#{adminUsers.issueStarterCode()}"
+                               styleClass="btn btn--ghost" />
+              <h:commandButton value="Cancel" action="#{adminUsers.cancelEdit()}"
+                               styleClass="btn btn--ghost" />
+            </div>
+            <ui:fragment rendered="#{not empty adminUsers.starterCode}">
+              <div class="demo-note" style="margin-top: 10px;">
+                Read this starter code to the user: <strong>#{adminUsers.starterCode}</strong>
+              </div>
+            </ui:fragment>
+          </h:form>
+        </div>
+      </section>
+    </ui:fragment>
+  </ui:define>
+</ui:composition>
+</html>

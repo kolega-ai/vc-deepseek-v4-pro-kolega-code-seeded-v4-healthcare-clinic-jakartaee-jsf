@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="API keys" />
+  <ui:define name="title">API keys</ui:define>
+  <ui:define name="breadcrumb">Admin · API keys</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{adminApiKeys.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>API keys</h1>
+        <p class="sub">Machine credentials for the read/booking/export API. Only the hash is stored.</p>
+      </div>
+    </div>
+
+    <ui:fragment rendered="#{not empty adminApiKeys.newKey}">
+      <div class="callout callout--warn">
+        <strong>Copy this key now — it cannot be shown again.</strong><br />
+        <div class="mono" style="margin: 6px 0;">#{adminApiKeys.newKey}</div>
+        <h:form styleClass="no-space">
+          <h:commandButton value="I've copied it" action="#{adminApiKeys.dismissNewKey()}"
+                           styleClass="btn btn--sm" />
+        </h:form>
+      </div>
+    </ui:fragment>
+
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head"><h2>Create a key</h2></div>
+        <div class="card-body">
+          <h:form id="keyForm">
+            <div class="form-grid">
+              <div class="field field--wide">
+                <label for="name" class="req">Name</label>
+                <h:inputText id="name" value="#{adminApiKeys.name}" styleClass="input"
+                             required="true" requiredMessage="Name is required." maxlength="120" />
+                <h:message for="name" styleClass="field-error" />
+              </div>
+              <div class="field field--wide">
+                <label class="req">Scopes</label>
+                <h:selectManyCheckbox id="scopes" value="#{adminApiKeys.scopes}" layout="pageDirection">
+                  <f:selectItems value="#{adminApiKeys.allowedScopes}" var="s"
+                                 itemValue="#{s}" itemLabel="#{s}" />
+                </h:selectManyCheckbox>
+              </div>
+              <div class="field">
+                <label for="expiresDays">Expires in days</label>
+                <h:inputText id="expiresDays" value="#{adminApiKeys.expiresDays}" styleClass="input" maxlength="4" />
+                <div class="help">0 = never expires.</div>
+              </div>
+            </div>
+            <div style="margin-top: 16px;">
+              <h:commandButton value="Create key" action="#{adminApiKeys.createKey()}"
+                               styleClass="btn btn--primary" />
+            </div>
+          </h:form>
+        </div>
+      </section>
+    </div>
+
+    <section class="card">
+      <div class="card-head"><h2>Keys</h2></div>
+      <div class="card-body">
+        <ui:fragment rendered="#{empty adminApiKeys.keys}">
+          <div class="empty-state">
+            <div class="glyph" aria-hidden="true">⚿</div>
+            <h3>No API keys</h3>
+            <p>Create one to grant machine access.</p>
+          </div>
+        </ui:fragment>
+        <ui:fragment rendered="#{not empty adminApiKeys.keys}">
+          <div class="table-wrap">
+            <table class="data">
+              <thead>
+                <tr><th>Name</th><th>Prefix</th><th>Scopes</th><th>Created</th><th>Expires</th><th>Last used</th><th>Status</th><th>Actions</th></tr>
+              </thead>
+              <tbody>
+                <ui:repeat value="#{adminApiKeys.keys}" var="k">
+                  <tr>
+                    <td class="cell-strong">#{k.name()}</td>
+                    <td class="mono">#{k.keyPrefix()}…</td>
+                    <td>
+                      <ui:repeat value="#{k.scopes().toArray()}" var="sc">
+                        <span class="chip chip--line mono">#{sc}</span>
+                      </ui:repeat>
+                    </td>
+                    <td class="cell-muted">#{ux.fmtDateTime(k.createdAt())}</td>
+                    <td class="cell-muted">#{k.expiresAt() == null ? 'Never' : ux.fmtDateTime(k.expiresAt())}</td>
+                    <td class="cell-muted">#{ux.fmtDateTime(k.lastUsedAt())}</td>
+                    <td><span class="#{k.active() ? 'badge badge--green' : 'badge badge--gray'}">#{k.active() ? 'Active' : 'Revoked'}</span></td>
+                    <td>
+                      <h:form styleClass="row-actions">
+                        <h:commandButton value="Revoke" action="#{adminApiKeys.setActive(k.id(), false)}"
+                                         rendered="#{k.active()}"
+                                         pt:data-confirm="Revoke this key? It stops working immediately."
+                                         styleClass="btn btn--danger btn--sm" />
+                        <h:commandButton value="Activate" action="#{adminApiKeys.setActive(k.id(), true)}"
+                                         rendered="#{not k.active()}"
+                                         pt:data-confirm="Re-activate this key?"
+                                         styleClass="btn btn--ghost btn--sm" />
+                      </h:form>
+                    </td>
+                  </tr>
+                </ui:repeat>
+              </tbody>
+            </table>
+          </div>
+        </ui:fragment>
+      </div>
+    </section>
+  </ui:define>
+</ui:composition>
+</html>

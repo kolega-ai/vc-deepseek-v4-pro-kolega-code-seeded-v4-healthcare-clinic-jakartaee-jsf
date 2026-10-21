@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="6.0"
+         xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd">
+
+  <display-name>Oakfield Clinic Patient Portal</display-name>
+
+  <!-- ===================== JSF configuration ===================== -->
+  <context-param>
+    <param-name>jakarta.faces.PROJECT_STAGE</param-name>
+    <!-- Development surfaces detailed errors locally; set to Production for prod. -->
+    <param-value>Development</param-value>
+  </context-param>
+  <context-param>
+    <param-name>jakarta.faces.STATE_SAVING_METHOD</param-name>
+    <param-value>server</param-value>
+  </context-param>
+  <context-param>
+    <param-name>jakarta.faces.FACELETS_SKIP_COMMENTS</param-name>
+    <param-value>true</param-value>
+  </context-param>
+
+  <servlet>
+    <servlet-name>FacesServlet</servlet-name>
+    <servlet-class>jakarta.faces.webapp.FacesServlet</servlet-class>
+    <load-on-startup>1</load-on-startup>
+    <multipart-config>
+      <!-- Hard ceiling well above the decision-enforced 10 MB per-document limit. -->
+      <max-file-size>16777216</max-file-size>
+      <max-request-size>20971520</max-request-size>
+      <file-size-threshold>1048576</file-size-threshold>
+    </multipart-config>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>FacesServlet</servlet-name>
+    <url-pattern>*.xhtml</url-pattern>
+  </servlet-mapping>
+
+  <welcome-file-list>
+    <welcome-file>index.xhtml</welcome-file>
+  </welcome-file-list>
+
+  <!-- ===================== Session ===================== -->
+  <session-config>
+    <session-timeout>30</session-timeout>
+    <cookie-config>
+      <http-only>true</http-only>
+      <secure>false</secure>
+    </cookie-config>
+    <tracking-mode>COOKIE</tracking-mode>
+    <!-- Kiosk tablets at the front desk block third-party cookies; keep the
+         id on the URL so the check-in flow survives the cookie-less mode. -->
+    <tracking-mode>URL</tracking-mode>
+  </session-config>
+
+  <!-- ===================== Declarative security =====================
+       Authentication is performed by the Jakarta Security form mechanism
+       (@FormAuthenticationMechanismDefinition on ApplicationConfig) with a
+       DB-backed IdentityStore. These constraints guarantee that no URL under
+       the protected prefixes can be reached anonymously, and they encode the
+       coarse role gates. Fine-grained record-level authorization is enforced
+       by the decision tier inside every service call.
+  -->
+  <security-constraint>
+    <display-name>Authenticated application area (any role)</display-name>
+    <web-resource-collection>
+      <web-resource-name>app</web-resource-name>
+      <url-pattern>/app/*</url-pattern>
+    </web-resource-collection>
+    <auth-constraint>
+      <role-name>clinic_admin</role-name>
+      <role-name>clinician</role-name>
+      <role-name>front_desk</role-name>
+      <role-name>patient</role-name>
+    </auth-constraint>
+  </security-constraint>
+
+  <security-constraint>
+    <display-name>Patient self-service area</display-name>
+    <web-resource-collection>
+      <web-resource-name>patient-area</web-resource-name>
+      <url-pattern>/app/patient/*</url-pattern>
+    </web-resource-collection>
+    <auth-constraint>
+      <role-name>patient</role-name>
+    </auth-constraint>
+  </security-constraint>
+
+  <security-constraint>
+    <display-name>Staff area (front desk, clinicians, admins)</display-name>
+    <web-resource-collection>
+      <web-resource-name>staff-area</web-resource-name>
+      <url-pattern>/app/staff/*</url-pattern>
+    </web-resource-collection>
+    <auth-constraint>
+      <role-name>clinician</role-name>
+      <role-name>front_desk</role-name>
+      <role-name>clinic_admin</role-name>
+    </auth-constraint>
+  </security-constraint>
+
+  <security-constraint>
+    <display-name>Clinic administration area</display-name>
+    <web-resource-collection>
+      <web-resource-name>admin-area</web-resource-name>
+      <url-pattern>/app/admin/*</url-pattern>
+    </web-resource-collection>
+    <auth-constraint>
+      <role-name>clinic_admin</role-name>
+    </auth-constraint>
+  </security-constraint>
+
+  <!-- The /api/* and /core/* surfaces enforce their own authentication
+       (Bearer session tokens, API keys, and core-mock scope tokens) inside
+       the JAX-RS layer and are intentionally not listed above. -->
+
+  <!-- ===================== Error pages ===================== -->
+  <error-page>
+    <error-code>403</error-code>
+    <location>/403.xhtml</location>
+  </error-page>
+  <error-page>
+    <error-code>404</error-code>
+    <location>/404.xhtml</location>
+  </error-page>
+  <error-page>
+    <error-code>500</error-code>
+    <location>/500.xhtml</location>
+  </error-page>
+  <error-page>
+    <exception-type>jakarta.faces.application.ViewExpiredException</exception-type>
+    <location>/login.xhtml?expired=true</location>
+  </error-page>
+</web-app>

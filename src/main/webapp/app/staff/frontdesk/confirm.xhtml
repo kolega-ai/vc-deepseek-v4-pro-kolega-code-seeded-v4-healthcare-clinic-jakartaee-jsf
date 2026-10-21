@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Confirm booking requests" />
+  <ui:define name="title">Confirm booking requests</ui:define>
+  <ui:define name="breadcrumb">Confirm booking requests</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{confirmRequests.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Confirm booking requests</h1>
+        <p class="sub">Review and confirm patient appointment requests.</p>
+      </div>
+    </div>
+
+    <h:form id="confirmForm">
+      <section class="card">
+        <div class="card-head"><h2>Cancellation reason (shared)</h2></div>
+        <div class="card-body">
+          <div class="field">
+            <label for="cancelReason">Reason (used when you cancel a request)</label>
+            <h:inputText id="cancelReason" value="#{confirmRequests.cancelReason}" styleClass="input" maxlength="500" />
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>Requests</h2></div>
+        <div class="card-body">
+          <ui:fragment rendered="#{empty confirmRequests.list}">
+            <div class="empty-state">
+              <div class="glyph" aria-hidden="true">✓</div>
+              <h3>Nothing to confirm</h3>
+              <p>Patient booking requests will appear here.</p>
+            </div>
+          </ui:fragment>
+          <ui:fragment rendered="#{not empty confirmRequests.list}">
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr><th>When</th><th>Patient</th><th>Provider</th><th>Type</th><th>Reason</th><th>Requested</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                  <ui:repeat value="#{confirmRequests.list}" var="a">
+                    <tr>
+                      <td class="cell-strong">#{ux.fmtDateTime(a.startTime)}</td>
+                      <td><a href="#{request.contextPath}/app/staff/patient.xhtml?id=#{a.patient.id}">#{a.patient.fullName()}</a></td>
+                      <td>#{a.provider.fullName()}</td>
+                      <td>#{a.type.name}</td>
+                      <td class="cell-muted">#{a.reason}</td>
+                      <td class="cell-muted">#{ux.fmtDateTime(a.createdAt)}</td>
+                      <td>
+                        <div class="row-actions">
+                          <h:commandButton value="Confirm" action="#{confirmRequests.confirm(a.id)}" styleClass="btn btn--success btn--sm" />
+                          <h:commandButton value="Cancel" action="#{confirmRequests.cancelRequest(a.id)}" styleClass="btn btn--danger btn--sm"
+                                           pt:data-confirm="Cancel this request?" />
+                        </div>
+                      </td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </ui:fragment>
+        </div>
+      </section>
+    </h:form>
+  </ui:define>
+</ui:composition>
+</html>

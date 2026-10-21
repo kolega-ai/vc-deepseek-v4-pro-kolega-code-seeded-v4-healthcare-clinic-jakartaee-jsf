@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Schedules" />
+  <ui:define name="title">Schedules</ui:define>
+  <ui:define name="breadcrumb">Admin · Schedules</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{adminSchedules.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Schedules</h1>
+        <p class="sub">Weekly working hours and blocked days per provider. Booking never trusts client-supplied schedule data.</p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head"><h2>Add a weekly slot</h2></div>
+        <div class="card-body">
+          <h:form id="scheduleForm">
+            <div class="form-grid">
+              <div class="field">
+                <label for="providerId" class="req">Provider</label>
+                <h:selectOneMenu id="providerId" value="#{adminSchedules.providerId}" styleClass="select">
+                  <f:selectItem itemValue="#{null}" itemLabel="Pick a provider…" />
+                  <f:selectItems value="#{adminSchedules.providerList}" var="p"
+                                 itemValue="#{p.id}" itemLabel="#{p.fullName()}" />
+                </h:selectOneMenu>
+              </div>
+              <div class="field">
+                <label for="dayOfWeek" class="req">Day of week</label>
+                <h:selectOneMenu id="dayOfWeek" value="#{adminSchedules.dayOfWeek}" styleClass="select">
+                  <f:selectItem itemValue="1" itemLabel="Monday" />
+                  <f:selectItem itemValue="2" itemLabel="Tuesday" />
+                  <f:selectItem itemValue="3" itemLabel="Wednesday" />
+                  <f:selectItem itemValue="4" itemLabel="Thursday" />
+                  <f:selectItem itemValue="5" itemLabel="Friday" />
+                  <f:selectItem itemValue="6" itemLabel="Saturday" />
+                  <f:selectItem itemValue="7" itemLabel="Sunday" />
+                </h:selectOneMenu>
+              </div>
+              <div class="field">
+                <label for="startTime" class="req">Start time</label>
+                <h:inputText id="startTime" value="#{adminSchedules.startTime}" styleClass="input"
+                             required="true" requiredMessage="Start time is required." maxlength="5" />
+                <h:message for="startTime" styleClass="field-error" />
+                <div class="help">24-hour, HH:mm (e.g. 09:00)</div>
+              </div>
+              <div class="field">
+                <label for="endTime" class="req">End time</label>
+                <h:inputText id="endTime" value="#{adminSchedules.endTime}" styleClass="input"
+                             required="true" requiredMessage="End time is required." maxlength="5" />
+                <h:message for="endTime" styleClass="field-error" />
+                <div class="help">Must be after the start time.</div>
+              </div>
+            </div>
+            <div style="margin-top: 16px;">
+              <h:commandButton value="Save slot" action="#{adminSchedules.addSchedule()}"
+                               styleClass="btn btn--primary" />
+            </div>
+          </h:form>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>Block a date</h2></div>
+        <div class="card-body">
+          <h:form id="blockForm">
+            <div class="form-grid">
+              <div class="field">
+                <label for="blockedProviderId" class="req">Provider</label>
+                <h:selectOneMenu id="blockedProviderId" value="#{adminSchedules.blockedProviderId}" styleClass="select">
+                  <f:selectItem itemValue="#{null}" itemLabel="Pick a provider…" />
+                  <f:selectItems value="#{adminSchedules.providerList}" var="p"
+                                 itemValue="#{p.id}" itemLabel="#{p.fullName()}" />
+                </h:selectOneMenu>
+              </div>
+              <div class="field">
+                <label for="blockedDate" class="req">Date</label>
+                <h:inputText id="blockedDate" value="#{adminSchedules.blockedDate}" styleClass="input" type="date"
+                             required="true" requiredMessage="Date is required.">
+                  <f:convertDateTime pattern="yyyy-MM-dd" type="date" />
+                </h:inputText>
+                <h:message for="blockedDate" styleClass="field-error" />
+                <div class="help">Today or later (shown 60 days out).</div>
+              </div>
+              <div class="field field--wide">
+                <label for="blockedReason">Reason</label>
+                <h:inputText id="blockedReason" value="#{adminSchedules.blockedReason}" styleClass="input" maxlength="200" />
+              </div>
+            </div>
+            <div style="margin-top: 16px;">
+              <h:commandButton value="Block date" action="#{adminSchedules.addBlockedDate()}"
+                               styleClass="btn btn--primary" />
+            </div>
+          </h:form>
+        </div>
+      </section>
+    </div>
+
+    <ui:repeat value="#{adminSchedules.providerList}" var="p">
+      <section class="card">
+        <div class="card-head"><h2>#{p.fullName()}</h2><span class="chip chip--line mono">NPI #{p.npi}</span></div>
+        <div class="card-body">
+          <h3 style="margin: 0 0 8px;">Weekly schedule</h3>
+          <ui:fragment rendered="#{empty adminSchedules.scheduleMap[p.id]}">
+            <div class="empty-state"><div class="glyph" aria-hidden="true">▦</div>
+              <h3>No weekly slots</h3><p>Add a slot with the form above.</p></div>
+          </ui:fragment>
+          <ui:fragment rendered="#{not empty adminSchedules.scheduleMap[p.id]}">
+            <div class="table-wrap">
+              <table class="data">
+                <thead><tr><th>Day</th><th>Start</th><th>End</th><th>Actions</th></tr></thead>
+                <tbody>
+                  <ui:repeat value="#{adminSchedules.scheduleMap[p.id]}" var="s">
+                    <tr>
+                      <td class="cell-strong">#{adminSchedules.dayName(s.dayOfWeek)}</td>
+                      <td class="mono">#{s.startTime}</td>
+                      <td class="mono">#{s.endTime}</td>
+                      <td>
+                        <h:form styleClass="row-actions">
+                          <h:commandButton value="Remove" action="#{adminSchedules.removeSchedule(s.id)}"
+                                           pt:data-confirm="Remove this weekly slot?"
+                                           styleClass="btn btn--danger btn--sm" />
+                        </h:form>
+                      </td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </ui:fragment>
+
+          <h3 style="margin: 16px 0 8px;">Blocked dates (next 60 days)</h3>
+          <ui:fragment rendered="#{empty adminSchedules.blockedMap[p.id]}">
+            <div class="empty-state"><div class="glyph" aria-hidden="true">▤</div>
+              <h3>No blocked dates</h3></div>
+          </ui:fragment>
+          <ui:fragment rendered="#{not empty adminSchedules.blockedMap[p.id]}">
+            <div class="table-wrap">
+              <table class="data">
+                <thead><tr><th>Date</th><th>Reason</th><th>Actions</th></tr></thead>
+                <tbody>
+                  <ui:repeat value="#{adminSchedules.blockedMap[p.id]}" var="b">
+                    <tr>
+                      <td class="cell-strong">#{ux.fmtDate(b.blockDate)}</td>
+                      <td class="cell-muted">#{b.reason}</td>
+                      <td>
+                        <h:form styleClass="row-actions">
+                          <h:commandButton value="Unblock" action="#{adminSchedules.removeBlockedDate(b.id)}"
+                                           pt:data-confirm="Unblock this date?"
+                                           styleClass="btn btn--ghost btn--sm" />
+                        </h:form>
+                      </td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </ui:fragment>
+        </div>
+      </section>
+    </ui:repeat>
+  </ui:define>
+</ui:composition>
+</html>

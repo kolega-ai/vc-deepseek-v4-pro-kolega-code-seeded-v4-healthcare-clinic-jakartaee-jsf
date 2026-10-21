@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core">
+<f:view contentType="text/html">
+  <f:metadata>
+    <f:viewParam name="returnTo" value="#{login.returnTo}" />
+    <f:viewParam name="loggedOut" value="#{login.loggedOutFlag}" />
+    <f:viewParam name="expired" value="#{login.expiredFlag}" />
+    <f:viewParam name="registered" value="#{login.registeredFlag}" />
+    <f:viewAction action="#{login.onLoad()}" onPostback="true" />
+  </f:metadata>
+  <h:head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign in · Oakfield Family Clinic</title>
+    <link rel="stylesheet" href="#{request.contextPath}/resources/css/app.css?v=#{asset.cacheBust()}" />
+  </h:head>
+  <h:body>
+    <div class="auth-wrap">
+      <section class="auth-brand" aria-label="Welcome">
+        <div>
+          <div class="brand">
+            <span class="brand-mark" aria-hidden="true"></span>
+            <span>
+              <span class="brand-name">Oakfield Family Clinic</span><br/>
+              <span class="brand-sub">Patient Portal</span>
+            </span>
+          </div>
+          <h1>Your care,<br/>all in one place.</h1>
+          <p class="lede">Book appointments, message your care team, review visit summaries, and manage prescriptions — whenever it suits you.</p>
+          <ul class="auth-features">
+            <li><span class="tick">✓</span> Book, reschedule, and cancel appointments online</li>
+            <li><span class="tick">✓</span> Secure messaging with your clinicians</li>
+            <li><span class="tick">✓</span> Released visit summaries and prescriptions at a glance</li>
+            <li><span class="tick">✓</span> Upload pre-visit forms before you arrive</li>
+          </ul>
+        </div>
+        <div class="auth-foot">Local demo build · all patient data is generated mock data</div>
+      </section>
+
+      <section class="auth-panel">
+        <div class="auth-card">
+          <h2>Sign in</h2>
+          <p class="sub">Use your portal account to continue.</p>
+          <h:messages globalOnly="true" infoClass="alert alert--info" warnClass="alert alert--warning"
+                      errorClass="alert alert--error" fatalClass="alert alert--error" styleClass="messages" />
+          <h:form id="loginForm">
+            <h:outputText value="#{requestScope['authError']}" styleClass="alert alert--error"
+                          rendered="#{not empty requestScope['authError']}" />
+            <div class="field" style="margin-bottom: 12px;">
+              <label for="j_username">Email address</label>
+              <input type="email" id="j_username" name="j_username" class="input" autocomplete="username"
+                     maxlength="255" required="required" />
+            </div>
+            <div class="field" style="margin-bottom: 18px;">
+              <label for="j_password">Password</label>
+              <input type="password" id="j_password" name="j_password" class="input" autocomplete="current-password"
+                     maxlength="128" required="required" />
+            </div>
+            <div class="field" style="margin-bottom: 14px;">
+              <label><input type="checkbox" name="keepSignedIn" value="on" /> Keep me signed in on this device</label>
+            </div>
+            <input type="hidden" name="returnTo" value="#{login.returnTo}" />
+            <input type="submit" value="Sign in" class="btn btn--primary btn--lg btn--block" />
+          </h:form>
+          <div class="auth-links">
+            <a href="#{request.contextPath}/forgot-password.xhtml">Forgot your password?</a>
+            <span>·</span>
+            <a href="#{request.contextPath}/register.xhtml">New patient? Create an account</a>
+          </div>
+          <div class="demo-note">
+            <strong>Demo accounts</strong> (mock data only)<br/>
+            Patient: <span class="mono">patient@oakfield.local</span> · Front desk: <span class="mono">frontdesk@oakfield.local</span><br/>
+            Clinician: <span class="mono">clinician@oakfield.local</span> · Admin: <span class="mono">admin@oakfield.local</span><br/>
+            Password for all: <span class="mono">PatientPortal2026!</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </h:body>
+</f:view>
+</html>

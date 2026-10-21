@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Appointments" />
+  <ui:define name="title">Appointments</ui:define>
+  <ui:define name="breadcrumb">Appointments</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{staffAppointments.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Appointments</h1>
+        <p class="sub">Search and filter the clinic appointment book.</p>
+      </div>
+    </div>
+
+    <h:form id="filterForm">
+      <div class="filter-bar">
+        <div class="field">
+          <label for="from">From</label>
+          <h:inputText id="from" pt:type="date" value="#{staffAppointments.from}" styleClass="input">
+            <f:convertDateTime pattern="yyyy-MM-dd" type="date" />
+          </h:inputText>
+        </div>
+        <div class="field">
+          <label for="to">To</label>
+          <h:inputText id="to" pt:type="date" value="#{staffAppointments.to}" styleClass="input">
+            <f:convertDateTime pattern="yyyy-MM-dd" type="date" />
+          </h:inputText>
+        </div>
+        <div class="field">
+          <label for="provider">Provider</label>
+          <h:selectOneMenu id="provider" value="#{staffAppointments.providerId}" styleClass="select">
+            <f:selectItem itemValue="#{null}" itemLabel="All providers" />
+            <f:selectItems value="#{staffAppointments.providers}" var="p" itemValue="#{p.id}" itemLabel="#{p.fullName()}" />
+          </h:selectOneMenu>
+        </div>
+        <div class="field">
+          <label for="status">Status</label>
+          <h:selectOneMenu id="status" value="#{staffAppointments.status}" styleClass="select">
+            <f:selectItem itemValue="#{null}" itemLabel="All statuses" />
+            <f:selectItems value="#{staffAppointments.statuses}" var="s"
+                           itemValue="#{s}" itemLabel="#{ux.appointmentLabel(s)}" />
+          </h:selectOneMenu>
+        </div>
+        <h:commandButton value="Filter" action="#{staffAppointments.filter()}" styleClass="btn btn--primary" />
+        <h:commandButton value="Clear" action="#{staffAppointments.clear()}" styleClass="btn btn--ghost" />
+      </div>
+    </h:form>
+
+    <ui:fragment rendered="#{empty staffAppointments.page.items}">
+      <div class="empty-state">
+        <div class="glyph" aria-hidden="true">▦</div>
+        <h3>No appointments found</h3>
+        <p>Try widening the date range or clearing the filters.</p>
+      </div>
+    </ui:fragment>
+
+    <ui:fragment rendered="#{not empty staffAppointments.page.items}">
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr>
+              <th>When</th><th>Patient</th><th>Provider</th><th>Type</th><th>Status</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <ui:repeat value="#{staffAppointments.page.items}" var="a">
+              <tr>
+                <td class="cell-strong cell-nowrap">#{ux.fmtDateTime(a.startTime)}</td>
+                <td><a href="#{request.contextPath}/app/staff/patient.xhtml?id=#{a.patient.id}">#{a.patient.fullName()}</a></td>
+                <td>#{a.provider.fullName()}</td>
+                <td>#{a.type.name}</td>
+                <td><span class="#{ux.appointmentBadge(a.status)}">#{ux.appointmentLabel(a.status)}</span></td>
+                <td>
+                  <div class="row-actions">
+                    <h:link outcome="/app/staff/appointment.xhtml" styleClass="btn btn--ghost btn--sm">
+                      <f:param name="id" value="#{a.id}" />Open
+                    </h:link>
+                  </div>
+                </td>
+              </tr>
+            </ui:repeat>
+          </tbody>
+        </table>
+      </div>
+
+      <ui:include src="/WEB-INF/includes/pager.xhtml">
+        <ui:param name="pg" value="#{staffAppointments.page}" />
+        <ui:param name="bean" value="#{staffAppointments}" />
+      </ui:include>
+    </ui:fragment>
+  </ui:define>
+</ui:composition>
+</html>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:ui="jakarta.faces.facelets">
+  <div class="pager">
+    <span class="pager-info">
+      Page #{pg.page + 1} of #{pg.totalPages == 0 ? 1 : pg.totalPages} · #{pg.total} total
+    </span>
+    <div class="cluster">
+      <h:form id="prevPageForm">
+        <h:commandButton value="‹ Prev" action="#{bean.prevPage()}" styleClass="btn btn--ghost btn--sm"
+                         disabled="#{pg.page == 0}" />
+      </h:form>
+      <h:form id="nextPageForm">
+        <h:commandButton value="Next ›" action="#{bean.nextPage()}" styleClass="btn btn--ghost btn--sm"
+                         disabled="#{pg.page + 1 >= pg.totalPages}" />
+      </h:form>
+    </div>
+  </div>
+</ui:composition>

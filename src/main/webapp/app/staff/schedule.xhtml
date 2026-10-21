@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Schedule board" />
+  <ui:define name="title">Schedule board</ui:define>
+  <ui:define name="breadcrumb">Schedule board</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{staffSchedule.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Schedule board</h1>
+        <p class="sub">Day view of the clinic schedule, grouped by provider.</p>
+      </div>
+    </div>
+
+    <h:form id="boardControls">
+      <div class="filter-bar">
+        <div class="field">
+          <label>Day</label>
+          <div class="cluster">
+            <h:commandButton value="‹" action="#{staffSchedule.prevDay()}" styleClass="btn btn--ghost btn--sm"
+                             title="Previous day" aria-label="Previous day" />
+            <span class="cell-strong" style="align-self: center;">#{ux.fmtDate(staffSchedule.day)}</span>
+            <h:commandButton value="›" action="#{staffSchedule.nextDay()}" styleClass="btn btn--ghost btn--sm"
+                             title="Next day" aria-label="Next day" />
+            <h:commandButton value="Today" action="#{staffSchedule.today()}" styleClass="btn btn--ghost btn--sm" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="provider">Provider</label>
+          <h:selectOneMenu id="provider" value="#{staffSchedule.providerFilter}" styleClass="select">
+            <f:selectItem itemValue="#{null}" itemLabel="All providers" />
+            <f:selectItems value="#{staffSchedule.providers}" var="p" itemValue="#{p.id}" itemLabel="#{p.fullName()}" />
+          </h:selectOneMenu>
+        </div>
+        <h:commandButton value="Apply" action="#{staffSchedule.applyFilter()}" styleClass="btn btn--primary" />
+      </div>
+    </h:form>
+
+    <ui:fragment rendered="#{empty staffSchedule.appointments}">
+      <div class="empty-state">
+        <div class="glyph" aria-hidden="true">▦</div>
+        <h3>No appointments this day</h3>
+        <p>Nothing is on the board for this day.</p>
+      </div>
+    </ui:fragment>
+
+    <ui:fragment rendered="#{not empty staffSchedule.appointments}">
+      <ui:repeat value="#{staffSchedule.dayBoard}" var="pb">
+        <section class="card">
+          <div class="card-head">
+            <h2>#{pb.provider.fullName()}</h2>
+            <span class="cell-muted">#{pb.provider.specialty}</span>
+          </div>
+          <div class="card-body">
+            <ui:fragment rendered="#{empty pb.appointments}">
+              <p class="cell-muted">No appointments for this provider.</p>
+            </ui:fragment>
+            <div class="stack">
+              <ui:repeat value="#{pb.appointments}" var="a">
+                <div class="slot-card status-#{a.status}">
+                  <div class="row-between">
+                    <div class="cluster">
+                      <span class="slot-time">#{ux.fmtTime(a.startTime)}</span>
+                      <span class="slot-patient">
+                        <a href="#{request.contextPath}/app/staff/patient.xhtml?id=#{a.patient.id}">#{a.patient.fullName()}</a>
+                      </span>
+                      <span class="cell-muted">#{a.type.name}</span>
+                      <span class="#{ux.appointmentBadge(a.status)}">#{ux.appointmentLabel(a.status)}</span>
+                    </div>
+                    <div class="row-actions">
+                      <h:form id="chk_#{a.id}" styleClass="no-space">
+                        <h:commandButton value="Check in" action="#{staffSchedule.checkIn(a.id)}"
+                                         styleClass="btn btn--ghost btn--sm"
+                                         rendered="#{a.status == 'SCHEDULED' and (session.isFrontDesk() or session.isAdmin())}" />
+                      </h:form>
+                      <h:form id="cmpl_#{a.id}" styleClass="no-space">
+                        <h:commandButton value="Complete" action="#{staffSchedule.complete(a.id)}"
+                                         styleClass="btn btn--ghost btn--sm btn--success"
+                                         rendered="#{a.status == 'SCHEDULED' or a.status == 'CHECKED_IN'}" />
+                      </h:form>
+                      <h:form id="ns_#{a.id}" styleClass="no-space">
+                        <ui:fragment rendered="#{a.status == 'SCHEDULED' and staffSchedule.isPastStart(a) and (session.isFrontDesk() or session.isAdmin())}">
+                          <h:inputText value="#{staffSchedule.noShowReason}" styleClass="input" maxlength="500"
+                                       pt:placeholder="No-show note" />
+                          <h:commandButton value="No-show" action="#{staffSchedule.markNoShow(a.id)}"
+                                           styleClass="btn btn--ghost btn--sm btn--danger"
+                                           pt:data-confirm="Mark this appointment as a no-show?" />
+                        </ui:fragment>
+                      </h:form>
+                      <h:form id="cx_#{a.id}" styleClass="no-space">
+                        <ui:fragment rendered="#{(a.status == 'SCHEDULED' or a.status == 'REQUESTED') and (session.isFrontDesk() or session.isAdmin())}">
+                          <h:inputText value="#{staffSchedule.cancelReason}" styleClass="input" maxlength="500"
+                                       pt:placeholder="Cancel reason" />
+                          <h:commandButton value="Cancel" action="#{staffSchedule.cancel(a.id)}"
+                                           styleClass="btn btn--ghost btn--sm btn--danger"
+                                           pt:data-confirm="Cancel this appointment?" />
+                        </ui:fragment>
+                      </h:form>
+                    </div>
+                  </div>
+                  <ui:fragment rendered="#{not empty a.reason}">
+                    <div class="cell-muted pre-wrap">#{ux.truncated(a.reason, 120)}</div>
+                  </ui:fragment>
+                </div>
+              </ui:repeat>
+            </div>
+          </div>
+        </section>
+      </ui:repeat>
+    </ui:fragment>
+  </ui:define>
+</ui:composition>
+</html>

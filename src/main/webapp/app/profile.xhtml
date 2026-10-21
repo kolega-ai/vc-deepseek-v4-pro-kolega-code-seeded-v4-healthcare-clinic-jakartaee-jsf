@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="My profile" />
+  <ui:define name="title">My profile</ui:define>
+  <ui:define name="breadcrumb">My profile</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{profile.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>My profile</h1>
+        <p class="sub">Account details and contact information.</p>
+      </div>
+    </div>
+
+    <h:messages globalOnly="true" infoClass="alert alert--info" warnClass="alert alert--warning"
+                errorClass="alert alert--error" fatalClass="alert alert--error" styleClass="messages" />
+
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head"><h2>Account</h2></div>
+        <div class="card-body">
+          <div class="detail-grid">
+            <div class="kv"><div class="k">Name</div><div class="v">#{appSession.ctx().fullName}</div></div>
+            <div class="kv"><div class="k">Email</div><div class="v">#{profile.accountEmail}</div></div>
+            <div class="kv"><div class="k">Role</div><div class="v">#{profile.roleLabel}</div></div>
+          </div>
+        </div>
+      </section>
+
+      <ui:fragment rendered="#{appSession.isPatient()}">
+        <section class="card">
+          <div class="card-head"><h2>Contact details</h2></div>
+          <div class="card-body">
+            <h:form id="contactForm">
+              <div class="form-grid">
+                <div class="field">
+                  <label for="phone">Phone</label>
+                  <h:inputText id="phone" value="#{profile.phone}" styleClass="input" maxlength="30" />
+                </div>
+                <div class="field">
+                  <label for="email">Email</label>
+                  <h:inputText id="email" value="#{profile.email}" styleClass="input" maxlength="255" />
+                </div>
+                <div class="field field--wide">
+                  <label for="addr">Street address</label>
+                  <h:inputText id="addr" value="#{profile.addressLine1}" styleClass="input" maxlength="200" />
+                </div>
+                <div class="field"><label for="city">City</label>
+                  <h:inputText id="city" value="#{profile.city}" styleClass="input" maxlength="80" /></div>
+                <div class="field"><label for="state">State</label>
+                  <h:inputText id="state" value="#{profile.state}" styleClass="input" maxlength="40" /></div>
+                <div class="field"><label for="zip">Postal code</label>
+                  <h:inputText id="zip" value="#{profile.postalCode}" styleClass="input" maxlength="20" /></div>
+                <div class="field"><label for="ecn">Emergency contact name</label>
+                  <h:inputText id="ecn" value="#{profile.emergencyContactName}" styleClass="input" maxlength="120" /></div>
+                <div class="field"><label for="ecp">Emergency contact phone</label>
+                  <h:inputText id="ecp" value="#{profile.emergencyContactPhone}" styleClass="input" maxlength="30" /></div>
+              </div>
+              <div style="margin-top: 16px;">
+                <h:commandButton value="Save contact details" action="#{profile.saveContact()}" styleClass="btn btn--primary" />
+              </div>
+            </h:form>
+          </div>
+        </section>
+      </ui:fragment>
+
+      <section class="card">
+        <div class="card-head"><h2>Change password</h2></div>
+        <div class="card-body">
+          <h:form id="passwordForm">
+            <div class="form-grid">
+              <div class="field">
+                <label for="cur" class="req">Current password</label>
+                <h:inputSecret id="cur" value="#{profile.currentPassword}" styleClass="input" required="true"
+                               requiredMessage="Current password is required." maxlength="128" />
+                <h:message for="cur" styleClass="field-error" />
+              </div>
+              <div class="field">
+                <label for="new" class="req">New password</label>
+                <h:inputSecret id="new" value="#{profile.newPassword}" styleClass="input" required="true"
+                               requiredMessage="New password is required." maxlength="128" />
+                <h:message for="new" styleClass="field-error" />
+                <div class="help">At least 10 characters with uppercase, lowercase, and a digit.</div>
+              </div>
+              <div class="field">
+                <label for="conf" class="req">Confirm new password</label>
+                <h:inputSecret id="conf" value="#{profile.confirmPassword}" styleClass="input" required="true"
+                               requiredMessage="Please repeat the new password." maxlength="128" />
+                <h:message for="conf" styleClass="field-error" />
+              </div>
+            </div>
+            <div style="margin-top: 16px;">
+              <h:commandButton value="Change password" action="#{profile.changePassword()}" styleClass="btn btn--primary" />
+            </div>
+          </h:form>
+        </div>
+      </section>
+    </div>
+  </ui:define>
+</ui:composition>
+</html>

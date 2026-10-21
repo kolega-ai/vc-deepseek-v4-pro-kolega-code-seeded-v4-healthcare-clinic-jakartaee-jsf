@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+<h:head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>#{topbar.clinicName} · <ui:insert name="title">Portal</ui:insert></title>
+  <link rel="stylesheet" href="#{request.contextPath}/resources/css/app.css?v=#{asset.cacheBust()}" />
+  <h:outputScript name="js/app.js" target="body" />
+</h:head>
+<h:body>
+  <div class="app-shell">
+    <div class="sidebar-backdrop" aria-hidden="true"></div>
+    <aside class="sidebar" aria-label="Main navigation">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>
+          <span class="brand-name">#{topbar.clinicName}</span><br/>
+          <span class="brand-sub">Patient Portal</span>
+        </span>
+      </div>
+      <nav class="nav" aria-label="Sections">
+        <div class="nav-group">Overview</div>
+        <h:link outcome="/app/dashboard.xhtml" styleClass="nav-link #{view.viewId == '/app/dashboard.xhtml' ? 'active' : ''}">
+          <span class="nav-icon" aria-hidden="true">DA</span> Dashboard
+        </h:link>
+        <h:link outcome="/app/notifications.xhtml" styleClass="nav-link #{view.viewId == '/app/notifications.xhtml' ? 'active' : ''}">
+          <span class="nav-icon" aria-hidden="true">NO</span> Notifications
+          <ui:fragment rendered="#{topbar.unreadNotifications gt 0}">
+            <span class="nav-count">#{topbar.unreadNotifications}</span>
+          </ui:fragment>
+        </h:link>
+
+        <ui:fragment rendered="#{appSession.isPatient()}">
+          <div class="nav-group">My care</div>
+          <h:link outcome="/app/patient/appointments.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/patient/appointment') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">AP</span> Appointments
+          </h:link>
+          <h:link outcome="/app/patient/book.xhtml" styleClass="nav-link #{view.viewId == '/app/patient/book.xhtml' ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">BK</span> Book appointment
+          </h:link>
+          <h:link outcome="/app/patient/messages.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/patient/message') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">MS</span> Messages
+            <ui:fragment rendered="#{topbar.unreadMessages gt 0}">
+              <span class="nav-count">#{topbar.unreadMessages}</span>
+            </ui:fragment>
+          </h:link>
+          <h:link outcome="/app/patient/documents.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/patient/document') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">DC</span> Documents
+          </h:link>
+          <h:link outcome="/app/patient/prescriptions.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/patient/prescription') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">RX</span> Prescriptions
+          </h:link>
+          <h:link outcome="/app/patient/summaries.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/patient/summar') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">VS</span> Visit summaries
+          </h:link>
+        </ui:fragment>
+
+        <ui:fragment rendered="#{appSession.isStaff()}">
+          <div class="nav-group">Clinic</div>
+          <h:link outcome="/app/staff/schedule.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/staff/schedule') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">SC</span> Schedule board
+          </h:link>
+          <h:link outcome="/app/staff/appointments.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/staff/appointment') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">AP</span> Appointments
+          </h:link>
+          <h:link outcome="/app/staff/patients.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/staff/patient') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">PT</span> Patients
+          </h:link>
+          <h:link outcome="/app/staff/messages.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/staff/message') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">MS</span> Messages
+            <ui:fragment rendered="#{topbar.unreadMessages gt 0}">
+              <span class="nav-count">#{topbar.unreadMessages}</span>
+            </ui:fragment>
+          </h:link>
+          <h:link outcome="/app/staff/documents.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/staff/document') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">DC</span> Documents
+          </h:link>
+        </ui:fragment>
+
+        <ui:fragment rendered="#{appSession.isClinician()}">
+          <div class="nav-group">Clinical</div>
+          <h:link outcome="/app/staff/clinician/queue.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/staff/clinician/queue') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">QU</span> My queue
+          </h:link>
+          <h:link outcome="/app/staff/clinician/refills.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/staff/clinician/refill') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">RF</span> Refill queue
+          </h:link>
+        </ui:fragment>
+
+        <ui:fragment rendered="#{appSession.isFrontDesk()}">
+          <div class="nav-group">Front desk</div>
+          <h:link outcome="/app/staff/frontdesk/confirm.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/staff/frontdesk/confirm') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">CF</span> Confirm requests
+          </h:link>
+          <h:link outcome="/app/staff/frontdesk/forms.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/staff/frontdesk/form') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">FV</span> Form verification
+          </h:link>
+        </ui:fragment>
+
+        <ui:fragment rendered="#{appSession.isAdmin()}">
+          <div class="nav-group">Administration</div>
+          <h:link outcome="/app/admin/users.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/admin/user') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">US</span> Users
+          </h:link>
+          <h:link outcome="/app/admin/providers.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/admin/provider') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">PR</span> Providers
+          </h:link>
+          <h:link outcome="/app/admin/schedules.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/admin/schedule') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">SH</span> Schedules
+          </h:link>
+          <h:link outcome="/app/admin/types.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/admin/type') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">TY</span> Appointment types
+          </h:link>
+          <h:link outcome="/app/admin/settings.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/admin/setting') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">SE</span> Settings
+          </h:link>
+          <h:link outcome="/app/admin/audit.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/admin/audit') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">AU</span> Audit log
+          </h:link>
+          <h:link outcome="/app/admin/imports.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/admin/import') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">IM</span> Imports
+          </h:link>
+          <h:link outcome="/app/admin/exports.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/admin/export') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">EX</span> Exports
+          </h:link>
+          <h:link outcome="/app/admin/api-keys.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/admin/api-key') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">AK</span> API keys
+          </h:link>
+          <h:link outcome="/app/admin/webhooks.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/admin/webhook') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">WH</span> Webhooks
+          </h:link>
+          <h:link outcome="/app/admin/outbox.xhtml" styleClass="nav-link #{view.viewId.startsWith('/app/admin/outbox') ? 'active' : ''}">
+            <span class="nav-icon" aria-hidden="true">OB</span> Outbox
+          </h:link>
+        </ui:fragment>
+      </nav>
+      <div class="sidebar-foot">v1.0 · local demo · all patient data is mock</div>
+    </aside>
+
+    <div class="main-col">
+      <header class="topbar">
+        <button type="button" class="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+        <div class="breadcrumbs">
+          <a href="#{request.contextPath}/app/dashboard.xhtml">Home</a>
+          <span class="sep">›</span>
+          <span><ui:insert name="breadcrumb">Portal</ui:insert></span>
+        </div>
+        <div class="topbar-actions">
+          <h:form id="topbarBell" styleClass="no-space">
+            <h:commandLink action="/app/notifications.xhtml?faces-redirect=true" styleClass="icon-btn"
+                           title="Notifications" aria-label="Notifications">
+              <span aria-hidden="true">🔔</span>
+              <ui:fragment rendered="#{topbar.unreadNotifications gt 0}">
+                <span class="dot" aria-hidden="true"></span>
+              </ui:fragment>
+            </h:commandLink>
+          </h:form>
+          <h:link outcome="/app/profile.xhtml" styleClass="user-menu" title="Your profile">
+            <span class="avatar" aria-hidden="true">#{appSession.initials()}</span>
+            <span>
+              <span class="uname">#{appSession.ctx().fullName}</span><br/>
+              <span class="urole">#{appSession.userLabel()}</span>
+            </span>
+          </h:link>
+          <h:form id="logoutForm">
+            <h:commandLink action="#{topbar.logout()}" styleClass="btn btn--ghost btn--sm" title="Sign out">
+              Sign out
+            </h:commandLink>
+          </h:form>
+        </div>
+      </header>
+
+      <main class="page">
+        <div class="messages" aria-live="polite">
+          <h:messages id="flash" globalOnly="true" infoClass="alert alert--info" warnClass="alert alert--warning"
+                      errorClass="alert alert--error" fatalClass="alert alert--error" />
+        </div>
+        <ui:insert name="content" />
+      </main>
+    </div>
+  </div>
+</h:body>
+</html>

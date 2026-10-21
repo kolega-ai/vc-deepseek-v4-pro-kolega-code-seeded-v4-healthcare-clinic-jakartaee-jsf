@@ -1,0 +1,31 @@
+# WildFly CLI configuration applied at image build time (embedded mode).
+# Registers the PostgreSQL driver and the application datasource.
+# Runtime values come from environment variables (set by docker compose).
+embed-server --server-config=standalone.xml --std-out=echo
+
+batch
+# JDBC driver (jar + module.xml are copied into the image by the Dockerfile)
+/subsystem=datasources/jdbc-driver=postgresql:add(driver-name=postgresql,driver-module-name=org.postgresql,driver-class-name=org.postgresql.Driver,driver-xa-datasource-class-name=org.postgresql.xa.PGXADataSource)
+
+# Application datasource. URL/credentials are resolved from the environment at
+# runtime; nothing secret is baked into the image or the server config.
+data-source add --name=ClinicDS \
+  --jndi-name=java:jboss/datasources/ClinicDS \
+  --driver-name=postgresql \
+  --connection-url="${env.DB_URL:jdbc:postgresql://localhost:5432/clinic}" \
+  --user-name="${env.DB_USER:clinic}" \
+  --password="${env.DB_PASSWORD:clinic_dev_password}" \
+  --enabled=true \
+  --valid-connection-checker-class-name=org.jboss.jca.adapters.jdbc.extensions.postgres.PostgreSQLValidConnectionChecker \
+  --exception-sorter-class-name=org.jboss.jca.adapters.jdbc.extensions.postgres.PostgreSQLExceptionSorter \
+  --background-validation=true \
+  --background-validation-millis=30000 \
+  --min-pool-size=1 \
+  --max-pool-size=20
+run-batch
+
+# The application manages its own identities through the Jakarta Security
+# mechanism; Elytron must not try to integrate JASPIC identities with the
+# server realm (otherwise notifyContainerAboutLogin fails with ELY01177).
+/subsystem=undertow/application-security-domain=other:write-attribute(name=integrated-jaspi, value=false)
+stop-embedded-server

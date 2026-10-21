@@ -1,0 +1,2 @@
+firstName,lastName,dateOfBirth,gender,email,phone,addressLine1,city,state,postalCode,insuranceProvider,insurancePolicyNumber,insuranceGroupNumber,emergencyContactName,emergencyContactPhone,primaryProviderNPI
+Jordan,Smith,1990-01-15,M,jordan.smith@example.test,(555) 010-2233,9 Quail Run,Oakfield,CA,90210,Northgate Health Plan,NGP-10001,GRP-2201,Alex Smith,(555) 010-2234,1982746551

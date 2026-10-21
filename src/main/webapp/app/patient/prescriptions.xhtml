@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Prescriptions" />
+  <ui:define name="title">Prescriptions</ui:define>
+  <ui:define name="breadcrumb">Prescriptions</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{ptPrescriptions.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Prescriptions</h1>
+        <p class="sub">Your active medications and refill requests.</p>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="card-body">
+        <ui:fragment rendered="#{empty ptPrescriptions.items}">
+          <div class="empty-state">
+            <div class="glyph" aria-hidden="true">✚</div>
+            <h3>No prescriptions</h3>
+            <p>Prescriptions written during your visits will appear here.</p>
+          </div>
+        </ui:fragment>
+        <ui:fragment rendered="#{not empty ptPrescriptions.items}">
+          <div class="table-wrap">
+            <table class="data">
+              <thead>
+                <tr><th>Medication</th><th>Prescriber</th><th>Status</th><th>Refill</th><th>Remaining</th><th></th></tr>
+              </thead>
+              <tbody>
+                <ui:repeat value="#{ptPrescriptions.items}" var="r">
+                  <tr>
+                    <td>
+                      <div class="cell-strong">#{r.medicationName}</div>
+                      <div class="cell-muted">#{r.dosage} · #{r.frequency}</div>
+                      <div class="cell-muted">#{r.instructions}</div>
+                    </td>
+                    <td>#{r.provider.fullName()}</td>
+                    <td>#{ptPrescriptions.statusLabel(r)}</td>
+                    <td>
+                      <span class="#{ux.refillBadge(r.refillStatus)}">#{ux.refillLabel(r.refillStatus)}</span>
+                      <ui:fragment rendered="#{r.refillStatus == 'APPROVED'}">
+                        <div class="cell-muted">#{ptPrescriptions.transmitLabel(r)}</div>
+                      </ui:fragment>
+                      <ui:fragment rendered="#{r.refillStatus == 'APPROVED' or r.refillStatus == 'DENIED' or r.refillStatus == 'NEEDS_INFO'}">
+                        <div class="cell-muted">#{r.refillResponseNote}</div>
+                      </ui:fragment>
+                    </td>
+                    <td class="cell-nowrap">#{r.refillsRemaining}</td>
+                    <td>
+                      <ui:fragment rendered="#{r.refillStatus == 'NONE'}">
+                        <h:form id="requestRefill#{r.id}">
+                          <div class="field">
+                            <label for="refillNote#{r.id}" class="req">Why do you need a refill?</label>
+                            <h:inputTextarea id="refillNote#{r.id}" value="#{ptPrescriptions.refillNote}"
+                                             styleClass="textarea" required="true"
+                                             requiredMessage="Tell us why you need the refill." maxlength="1000" />
+                            <h:message for="refillNote#{r.id}" styleClass="field-error" />
+                          </div>
+                          <div style="margin-top: 8px;">
+                            <h:commandButton value="Request refill" action="#{ptPrescriptions.requestRefill(r.id)}"
+                                             styleClass="btn btn--sm" />
+                          </div>
+                        </h:form>
+                      </ui:fragment>
+                      <ui:fragment rendered="#{r.refillStatus == 'NEEDS_INFO'}">
+                        <div class="callout callout--info" style="margin-bottom: 8px;">
+                          Your provider needs more information: #{r.refillResponseNote}
+                        </div>
+                        <h:form id="resubmitRefill#{r.id}">
+                          <div class="field">
+                            <label for="resubmitNote#{r.id}" class="req">Your answer</label>
+                            <h:inputTextarea id="resubmitNote#{r.id}" value="#{ptPrescriptions.refillNote}"
+                                             styleClass="textarea" required="true"
+                                             requiredMessage="Answer your provider's question." maxlength="1000" />
+                            <h:message for="resubmitNote#{r.id}" styleClass="field-error" />
+                          </div>
+                          <div style="margin-top: 8px;">
+                            <h:commandButton value="Resubmit request" action="#{ptPrescriptions.requestRefill(r.id)}"
+                                             styleClass="btn btn--sm" />
+                          </div>
+                        </h:form>
+                      </ui:fragment>
+                      <ui:fragment rendered="#{r.refillStatus == 'REQUESTED'}">
+                        <h:form id="cancelRefill#{r.id}" pt:data-confirm="Withdraw this refill request?">
+                          <h:commandButton value="Cancel request" action="#{ptPrescriptions.cancelRefill(r.id)}"
+                                           styleClass="btn btn--ghost btn--sm btn--danger" />
+                        </h:form>
+                      </ui:fragment>
+                    </td>
+                  </tr>
+                </ui:repeat>
+              </tbody>
+            </table>
+          </div>
+        </ui:fragment>
+      </div>
+    </section>
+  </ui:define>
+</ui:composition>
+</html>

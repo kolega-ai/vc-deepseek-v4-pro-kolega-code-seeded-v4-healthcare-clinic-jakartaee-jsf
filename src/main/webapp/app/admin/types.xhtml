@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Appointment types" />
+  <ui:define name="title">Appointment types</ui:define>
+  <ui:define name="breadcrumb">Admin · Appointment types</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{adminTypes.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Appointment types</h1>
+        <p class="sub">Visit kinds, durations, and the fee schedule.</p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head"><h2>Fee schedule</h2></div>
+        <div class="card-body">
+          <ui:fragment rendered="#{empty adminTypes.typeList}">
+            <div class="empty-state">
+              <div class="glyph" aria-hidden="true">▣</div>
+              <h3>No appointment types</h3>
+              <p>Create the first type with the form.</p>
+            </div>
+          </ui:fragment>
+          <ui:fragment rendered="#{not empty adminTypes.typeList}">
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr><th>Code</th><th>Name</th><th>Duration</th><th>Fee</th><th>Active</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                  <ui:repeat value="#{adminTypes.typeList}" var="t">
+                    <tr>
+                      <td class="mono">#{t.code}</td>
+                      <td class="cell-strong">#{t.name}<br /><span class="cell-muted">#{t.description}</span></td>
+                      <td>#{t.durationMinutes} min</td>
+                      <td>#{ux.money(t.feeAmount, t.feeCurrency)}</td>
+                      <td><span class="#{t.active ? 'badge badge--green' : 'badge badge--gray'}">#{t.active ? 'Active' : 'Inactive'}</span></td>
+                      <td>
+                        <h:form styleClass="row-actions">
+                          <h:commandButton value="Edit" action="#{adminTypes.startEdit(t)}"
+                                           styleClass="btn btn--ghost btn--sm" />
+                        </h:form>
+                      </td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </ui:fragment>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>#{adminTypes.editing ? 'Edit type' : 'New type'}</h2></div>
+        <div class="card-body">
+          <h:form id="typeForm">
+            <div class="form-grid">
+              <div class="field">
+                <label for="code" class="req">Code</label>
+                <h:inputText id="code" value="#{adminTypes.code}" styleClass="input"
+                             disabled="#{adminTypes.editing}"
+                             required="true" requiredMessage="Code is required." maxlength="20" />
+                <h:message for="code" styleClass="field-error" />
+                <div class="help">2-20 letters, digits, or underscores. Fixed after creation.</div>
+              </div>
+              <div class="field">
+                <label for="name" class="req">Name</label>
+                <h:inputText id="name" value="#{adminTypes.name}" styleClass="input"
+                             required="true" requiredMessage="Name is required." maxlength="120" />
+                <h:message for="name" styleClass="field-error" />
+              </div>
+              <div class="field field--wide">
+                <label for="description">Description</label>
+                <h:inputText id="description" value="#{adminTypes.description}" styleClass="input" maxlength="500" />
+              </div>
+              <div class="field">
+                <label for="durationMinutes" class="req">Duration (minutes)</label>
+                <h:inputText id="durationMinutes" value="#{adminTypes.durationMinutes}" styleClass="input"
+                             required="true" requiredMessage="Duration is required." maxlength="3" />
+                <h:message for="durationMinutes" styleClass="field-error" />
+                <div class="help">Between 5 and 240 minutes.</div>
+              </div>
+              <div class="field">
+                <label for="feeAmount" class="req">Fee amount</label>
+                <h:inputText id="feeAmount" value="#{adminTypes.feeAmount}" styleClass="input"
+                             required="true" requiredMessage="Fee is required." maxlength="10" />
+                <h:message for="feeAmount" styleClass="field-error" />
+              </div>
+              <div class="field">
+                <label for="feeCurrency" class="req">Currency</label>
+                <h:inputText id="feeCurrency" value="#{adminTypes.feeCurrency}" styleClass="input"
+                             required="true" requiredMessage="Currency is required." maxlength="3" />
+                <h:message for="feeCurrency" styleClass="field-error" />
+                <div class="help">3-letter code, e.g. USD.</div>
+              </div>
+              <div class="field">
+                <div class="checkbox-row">
+                  <h:selectBooleanCheckbox id="active" value="#{adminTypes.active}" />
+                  <label for="active">Active (offered in booking)</label>
+                </div>
+              </div>
+            </div>
+            <div class="help" style="margin-top: 12px;">
+              Fees are read server-side and never accepted from clients in booking flows.
+            </div>
+            <div style="margin-top: 16px;">
+              <h:commandButton value="Save type" action="#{adminTypes.save()}"
+                               styleClass="btn btn--primary" />
+              <h:commandButton value="Cancel" action="#{adminTypes.cancelEdit()}"
+                               rendered="#{adminTypes.editing}" styleClass="btn btn--ghost" />
+            </div>
+          </h:form>
+        </div>
+      </section>
+    </div>
+  </ui:define>
+</ui:composition>
+</html>

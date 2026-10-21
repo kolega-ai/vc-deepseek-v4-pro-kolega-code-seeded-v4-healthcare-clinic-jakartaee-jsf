@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Visit summaries" />
+  <ui:define name="title">Visit summaries</ui:define>
+  <ui:define name="breadcrumb">Visit summaries</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{ptSummaries.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Visit summaries</h1>
+        <p class="sub">Assessment and care instructions released after your visits.</p>
+      </div>
+      <div class="page-actions">
+        <a class="btn btn--ghost"
+           href="#{request.contextPath}/app/family/open?chart=#{ptSummaries.ownChartId}">Pocket view</a>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head">
+          <h2>Released summaries</h2>
+          <span class="text-sm text-muted">#{ptSummaries.summaries.size()} total</span>
+        </div>
+        <div class="card-body">
+          <ui:fragment rendered="#{empty ptSummaries.summaries}">
+            <div class="empty-state">
+              <div class="glyph" aria-hidden="true">▤</div>
+              <h3>No summaries yet</h3>
+              <p>Released visit summaries will appear here after your visits.</p>
+            </div>
+          </ui:fragment>
+          <ui:fragment rendered="#{not empty ptSummaries.summaries}">
+            <h:form id="listForm">
+              <div class="stack">
+                <ui:repeat value="#{ptSummaries.summaries}" var="v">
+                  <div class="row-between" style="border-bottom: 1px solid var(--line-soft); padding: 10px 0;">
+                    <div>
+                      <div class="cell-strong">#{ux.fmtDate(v.appointment.startTime.toLocalDate())}</div>
+                      <div class="cell-muted">#{v.provider.fullName()} · #{v.appointment.type.name}</div>
+                    </div>
+                    <h:commandButton value="Open" action="#{ptSummaries.open(v.id)}"
+                                     styleClass="btn btn--ghost btn--sm" />
+                  </div>
+                </ui:repeat>
+              </div>
+            </h:form>
+          </ui:fragment>
+        </div>
+      </section>
+
+      <ui:fragment rendered="#{ptSummaries.selected != null}">
+        <section class="card">
+          <div class="card-head">
+            <h2>Visit on #{ux.fmtDate(ptSummaries.selected.appointment.startTime.toLocalDate())}</h2>
+            <span class="#{ux.visitBadge(ptSummaries.selected.status)}">Released</span>
+          </div>
+          <div class="card-body">
+            <div class="detail-grid">
+              <div class="kv"><div class="k">Provider</div><div class="v">#{ptSummaries.selected.provider.fullName()}</div></div>
+              <div class="kv"><div class="k">Type</div><div class="v">#{ptSummaries.selected.appointment.type.name}</div></div>
+              <div class="kv"><div class="k">Visit date</div><div class="v">#{ux.fmtDateTime(ptSummaries.selected.appointment.startTime)}</div></div>
+              <div class="kv"><div class="k">Released</div><div class="v">#{ux.fmtDateTime(ptSummaries.selected.releasedAt)}</div></div>
+            </div>
+            <div class="divider" />
+            <div class="stack">
+              <div class="kv"><div class="k">Diagnosis</div><div class="v pre-wrap">#{ptSummaries.selected.diagnosisText}</div></div>
+              <div class="kv"><div class="k">Care instructions</div><div class="v pre-wrap">#{ptSummaries.selected.careInstructions}</div></div>
+              <div class="kv"><div class="k">Follow-up plan</div><div class="v pre-wrap">#{ptSummaries.selected.followUpPlan}</div></div>
+            </div>
+          </div>
+        </section>
+      </ui:fragment>
+      <ui:fragment rendered="#{ptSummaries.selected == null}">
+        <section class="card">
+          <div class="card-body">
+            <div class="empty-state">
+              <div class="glyph" aria-hidden="true">▤</div>
+              <h3>No summary selected</h3>
+              <p>Open a summary on the left to read the details.</p>
+            </div>
+          </div>
+        </section>
+      </ui:fragment>
+    </div>
+  </ui:define>
+</ui:composition>
+</html>

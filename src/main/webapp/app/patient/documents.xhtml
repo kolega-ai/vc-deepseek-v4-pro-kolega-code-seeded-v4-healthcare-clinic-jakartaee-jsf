@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Documents" />
+  <ui:define name="title">Documents</ui:define>
+  <ui:define name="breadcrumb">Documents</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{ptDocuments.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Documents</h1>
+        <p class="sub">Upload forms for the clinic and track their review status.</p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head"><h2>Upload a form</h2></div>
+        <div class="card-body">
+          <h:form id="uploadForm" enctype="multipart/form-data">
+            <div class="upload-zone">
+              <div>PDF, PNG, or JPG up to 10 MB</div>
+              <h:inputFile id="uploadFile" value="#{ptDocuments.file}" required="true"
+                           requiredMessage="Choose a file to upload." />
+              <h:message for="uploadFile" styleClass="field-error" />
+            </div>
+            <div class="form-grid">
+              <div class="field field--wide">
+                <label for="uploadTitle" class="req">Title</label>
+                <h:inputText id="uploadTitle" value="#{ptDocuments.title}" styleClass="input"
+                             required="true" requiredMessage="Give the document a title." maxlength="200" />
+                <h:message for="uploadTitle" styleClass="field-error" />
+              </div>
+              <div class="field field--wide">
+                <label for="uploadDescription">Description</label>
+                <h:inputTextarea id="uploadDescription" value="#{ptDocuments.description}"
+                                 styleClass="textarea" maxlength="1000" />
+              </div>
+            </div>
+            <div style="margin-top: 16px;">
+              <h:commandButton value="Upload form" action="#{ptDocuments.upload()}" styleClass="btn btn--primary" />
+            </div>
+          </h:form>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>Your forms</h2>
+          <span class="text-sm text-muted">#{ptDocuments.page.total} total</span>
+        </div>
+        <div class="card-body">
+          <h:form id="filterForm">
+            <div class="filter-bar">
+              <div class="field">
+                <label for="docCategory">Category</label>
+                <h:selectOneMenu id="docCategory" value="#{ptDocuments.categoryFilter}" styleClass="select" disabled="true">
+                  <f:selectItem itemValue="FORM" itemLabel="Form" />
+                </h:selectOneMenu>
+              </div>
+              <div class="field">
+                <label for="docStatus">Status</label>
+                <h:selectOneMenu id="docStatus" value="#{ptDocuments.statusFilter}" styleClass="select">
+                  <f:selectItem itemLabel="All statuses" noSelectionOption="true" />
+                  <f:selectItems value="#{ptDocuments.statusOptions}" var="s"
+                                 itemValue="#{s}" itemLabel="#{ux.docLabel(s)}" />
+                </h:selectOneMenu>
+              </div>
+              <div class="field">
+                <label for="docQuery">Search</label>
+                <h:inputText id="docQuery" value="#{ptDocuments.query}" styleClass="input" maxlength="200" />
+              </div>
+              <div class="field">
+                <label>&#160;</label>
+                <h:commandButton value="Apply filters" action="#{ptDocuments.filter()}" styleClass="btn" />
+              </div>
+            </div>
+          </h:form>
+
+          <ui:fragment rendered="#{empty ptDocuments.page.items}">
+            <div class="empty-state">
+              <div class="glyph" aria-hidden="true">▣</div>
+              <h3>No documents</h3>
+              <p>Uploaded forms will appear here.</p>
+            </div>
+          </ui:fragment>
+          <ui:fragment rendered="#{not empty ptDocuments.page.items}">
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr><th></th><th>Document</th><th>Uploaded</th><th>Status</th><th>Size</th><th></th></tr>
+                </thead>
+                <tbody>
+                  <ui:repeat value="#{ptDocuments.page.items}" var="d">
+                    <tr>
+                      <td><span class="doc-icon" aria-hidden="true">#{ux.docIcon(d.category)}</span></td>
+                      <td>
+                        <div class="cell-strong">#{d.title}</div>
+                        <div class="cell-muted">#{d.originalName}</div>
+                        <ui:fragment rendered="#{d.status == 'REJECTED'}">
+                          <div class="cell-muted">#{d.reviewNote}</div>
+                        </ui:fragment>
+                      </td>
+                      <td class="cell-nowrap cell-muted">#{ux.fmtDateTime(d.uploadedAt)}</td>
+                      <td><span class="#{ux.docBadge(d.status)}">#{ux.docLabel(d.status)}</span></td>
+                      <td class="cell-nowrap cell-muted">#{ux.fileSize(d.sizeBytes)}</td>
+                      <td>
+                        <a class="btn btn--ghost btn--sm" href="#{request.contextPath}/app/files/#{d.id}">Download</a>
+                      </td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </ui:fragment>
+        </div>
+        <div class="card-foot">
+          <ui:include src="/WEB-INF/includes/pager.xhtml">
+            <ui:param name="pg" value="#{ptDocuments.page}" />
+            <ui:param name="bean" value="#{ptDocuments}" />
+          </ui:include>
+        </div>
+      </section>
+    </div>
+  </ui:define>
+</ui:composition>
+</html>

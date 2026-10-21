@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Patient chart" />
+  <ui:define name="title">Patient chart</ui:define>
+  <ui:define name="breadcrumb">Patient chart</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{chart.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Patient chart</h1>
+        <p class="sub">#{chart.patient.fullName()} · clinical record review</p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head"><h2>#{chart.patient.fullName()}</h2></div>
+        <div class="card-body">
+          <ui:fragment rendered="#{not empty chart.patient.medicalAlert}">
+            <div class="callout callout--warn">
+              <strong>Medical alert:</strong> #{chart.patient.medicalAlert}
+            </div>
+          </ui:fragment>
+          <div class="detail-grid">
+            <div class="kv"><div class="k">Date of birth</div><div class="v">#{ux.fmtDate(chart.patient.dateOfBirth)}</div></div>
+            <div class="kv"><div class="k">Gender</div><div class="v">#{ux.genderLabel(chart.patient.gender)}</div></div>
+            <div class="kv"><div class="k">Phone</div><div class="v">#{chart.patient.phone}</div></div>
+            <div class="kv"><div class="k">Emergency contact</div><div class="v">#{chart.patient.emergencyContactName} · #{chart.patient.emergencyContactPhone}</div></div>
+            <div class="kv"><div class="k">Insurance</div><div class="v">#{chart.patient.insuranceProvider} · #{chart.patient.insurancePolicyNumber}</div></div>
+            <div class="kv"><div class="k">Primary provider</div><div class="v">#{chart.patient.primaryProvider.fullName()}</div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>Insurance eligibility</h2></div>
+        <div class="card-body">
+          <ui:fragment rendered="#{chart.eligibility.ok()}">
+            <div class="detail-grid">
+              <div class="kv"><div class="k">Plan</div><div class="v">#{chart.eligibility.planName()}</div></div>
+              <div class="kv"><div class="k">Copay</div><div class="v">$#{chart.eligibility.copayAmount()}</div></div>
+              <div class="kv"><div class="k">Status</div><div class="v"><span class="badge badge--green badge--solid">Eligible</span></div></div>
+            </div>
+          </ui:fragment>
+          <ui:fragment rendered="#{not chart.eligibility.ok()}">
+            <div class="callout callout--warn">#{chart.eligibility.message()}</div>
+          </ui:fragment>
+        </div>
+      </section>
+    </div>
+
+    <h:form id="tabForm">
+      <div class="tabs" role="tablist">
+        <h:commandLink value="Overview" action="#{chart.selectTab('overview')}"
+                       styleClass="#{chart.tab == 'overview' ? 'tab active' : 'tab'}" />
+        <h:commandLink value="Appointments" action="#{chart.selectTab('appointments')}"
+                       styleClass="#{chart.tab == 'appointments' ? 'tab active' : 'tab'}" />
+        <h:commandLink value="Summaries" action="#{chart.selectTab('summaries')}"
+                       styleClass="#{chart.tab == 'summaries' ? 'tab active' : 'tab'}" />
+        <h:commandLink value="Prescriptions" action="#{chart.selectTab('prescriptions')}"
+                       styleClass="#{chart.tab == 'prescriptions' ? 'tab active' : 'tab'}" />
+        <h:commandLink value="Messages" action="#{chart.selectTab('messages')}"
+                       styleClass="#{chart.tab == 'messages' ? 'tab active' : 'tab'}" />
+        <h:commandLink value="Documents" action="#{chart.selectTab('documents')}"
+                       styleClass="#{chart.tab == 'documents' ? 'tab active' : 'tab'}" />
+        <h:commandLink value="Audit" action="#{chart.selectTab('audit')}"
+                       styleClass="#{chart.tab == 'audit' ? 'tab active' : 'tab'}" />
+      </div>
+    </h:form>
+
+    <!-- ============ OVERVIEW ============ -->
+    <ui:fragment rendered="#{chart.tab == 'overview'}">
+      <div class="grid-2">
+        <section class="card">
+          <div class="card-head"><h2>Recent summaries</h2></div>
+          <div class="card-body">
+            <ui:fragment rendered="#{empty chart.summaries}">
+              <div class="empty-state"><div class="glyph" aria-hidden="true">▤</div>
+                <h3>No summaries</h3><p>Visit summaries will appear after appointments are completed.</p></div>
+            </ui:fragment>
+            <div class="stack">
+              <ui:repeat value="#{chart.summaries}" var="v" varStatus="st">
+                <ui:fragment rendered="#{st.index lt 5}">
+                  <div class="row-between" style="border-bottom: 1px solid var(--line-soft); padding-bottom: 8px;">
+                    <div>
+                      <div class="cell-strong">#{v.provider.fullName()}</div>
+                      <div class="cell-muted">#{ux.fmtDate(v.appointment.startTime.toLocalDate())} · #{v.appointment.type.name}
+                        · <span class="#{ux.visitBadge(v.status)}">#{v.status}</span></div>
+                    </div>
+                    <a class="btn btn--ghost btn--sm"
+                       href="#{request.contextPath}/app/staff/clinician/#{v.status == 'RELEASED' ? 'visit.xhtml?id=' : 'visit-form.xhtml?summary='}#{v.id}">Open</a>
+                  </div>
+                </ui:fragment>
+              </ui:repeat>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h2>Active prescriptions</h2></div>
+          <div class="card-body">
+            <div class="stack">
+              <ui:repeat value="#{chart.rxList}" var="r" varStatus="st">
+                <ui:fragment rendered="#{r.status.name() == 'ACTIVE' and st.index lt 5}">
+                  <div class="row-between" style="border-bottom: 1px solid var(--line-soft); padding-bottom: 8px;">
+                    <div>
+                      <div class="cell-strong">#{r.medicationName} #{r.dosage}</div>
+                      <div class="cell-muted">#{r.frequency} · #{r.refillsRemaining} refills remaining</div>
+                    </div>
+                    <span class="#{ux.refillBadge(r.refillStatus)}">#{ux.refillLabel(r.refillStatus)}</span>
+                  </div>
+                </ui:fragment>
+              </ui:repeat>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <section class="card">
+        <div class="card-head"><h2>Upcoming appointments</h2></div>
+        <div class="card-body">
+          <ui:fragment rendered="#{empty chart.appts}">
+            <div class="empty-state"><div class="glyph" aria-hidden="true">▦</div>
+              <h3>No appointments</h3><p>No appointments are on file for this patient.</p></div>
+          </ui:fragment>
+          <ui:fragment rendered="#{not empty chart.appts}">
+            <div class="table-wrap">
+              <table class="data">
+                <thead><tr><th>When</th><th>Provider</th><th>Type</th><th>Status</th></tr></thead>
+                <tbody>
+                  <ui:repeat value="#{chart.appts}" var="a" varStatus="st">
+                    <ui:fragment rendered="#{st.index lt 5}">
+                      <tr>
+                        <td class="cell-strong">#{ux.fmtDateTime(a.startTime)}</td>
+                        <td>#{a.provider.fullName()}</td>
+                        <td>#{a.type.name}</td>
+                        <td><span class="#{ux.appointmentBadge(a.status)}">#{ux.appointmentLabel(a.status)}</span></td>
+                      </tr>
+                    </ui:fragment>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </ui:fragment>
+        </div>
+      </section>
+    </ui:fragment>
+
+    <!-- ============ APPOINTMENTS ============ -->
+    <ui:fragment rendered="#{chart.tab == 'appointments'}">
+      <section class="card">
+        <div class="card-head"><h2>Appointments</h2></div>
+        <div class="card-body">
+          <ui:fragment rendered="#{empty chart.appts}">
+            <div class="empty-state"><div class="glyph" aria-hidden="true">▦</div>
+              <h3>No appointments</h3><p>No appointments are on file for this patient.</p></div>
+          </ui:fragment>
+          <ui:fragment rendered="#{not empty chart.appts}">
+            <div class="table-wrap">
+              <table class="data">
+                <thead><tr><th>When</th><th>Provider</th><th>Type</th><th>Status</th></tr></thead>
+                <tbody>
+                  <ui:repeat value="#{chart.appts}" var="a">
+                    <tr>
+                      <td class="cell-strong">#{ux.fmtDateTime(a.startTime)}</td>
+                      <td>#{a.provider.fullName()}</td>
+                      <td>#{a.type.name}</td>
+                      <td><span class="#{ux.appointmentBadge(a.status)}">#{ux.appointmentLabel(a.status)}</span></td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </ui:fragment>
+        </div>
+      </section>
+    </ui:fragment>
+
+    <!-- ============ SUMMARIES ============ -->
+    <ui:fragment rendered="#{chart.tab == 'summaries'}">
+      <section class="card">
+        <div class="card-head"><h2>Visit summaries</h2></div>
+        <div class="card-body">
+          <ui:fragment rendered="#{empty chart.summaries}">
+            <div class="empty-state"><div class="glyph" aria-hidden="true">▤</div>
+              <h3>No summaries</h3><p>Visit summaries will appear after appointments are completed.</p></div>
+          </ui:fragment>
+          <ui:fragment rendered="#{not empty chart.summaries}">
+            <div class="table-wrap">
+              <table class="data">
+                <thead><tr><th>Appointment</th><th>Provider</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>
+                  <ui:repeat value="#{chart.summaries}" var="v">
+                    <tr>
+                      <td class="cell-muted">#{ux.fmtDateTime(v.appointment.startTime)} · #{v.appointment.type.name}</td>
+                      <td>#{v.provider.fullName()}</td>
+                      <td><span class="#{ux.visitBadge(v.status)}">#{v.status}</span></td>
+                      <td>
+                        <div class="row-actions">
+                          <a class="btn btn--ghost btn--sm"
+                             href="#{request.contextPath}/app/staff/clinician/visit.xhtml?id=#{v.id}">View</a>
+                          <ui:fragment rendered="#{v.status == 'DRAFT'}">
+                            <a class="btn btn--ghost btn--sm"
+                               href="#{request.contextPath}/app/staff/clinician/visit-form.xhtml?summary=#{v.id}">Edit draft</a>
+                          </ui:fragment>
+                        </div>
+                      </td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </ui:fragment>
+        </div>
+      </section>
+    </ui:fragment>
+
+    <!-- ============ PRESCRIPTIONS ============ -->
+    <ui:fragment rendered="#{chart.tab == 'prescriptions'}">
+      <section class="card">
+        <div class="card-head">
+          <h2>Prescriptions</h2>
+          <a class="btn btn--primary btn--sm"
+             href="#{request.contextPath}/app/staff/clinician/rx-form.xhtml?patient=#{chart.patientId}">New prescription</a>
+        </div>
+        <div class="card-body">
+          <ui:fragment rendered="#{empty chart.rxList}">
+            <div class="empty-state"><div class="glyph" aria-hidden="true">✚</div>
+              <h3>No prescriptions</h3><p>Prescriptions written for this patient will appear here.</p></div>
+          </ui:fragment>
+          <ui:fragment rendered="#{not empty chart.rxList}">
+            <div class="table-wrap">
+              <table class="data">
+                <thead><tr><th>Medication</th><th>Dosage</th><th>Frequency</th><th>Refills</th><th>Status</th><th>Refill</th></tr></thead>
+                <tbody>
+                  <ui:repeat value="#{chart.rxList}" var="r">
+                    <tr>
+                      <td class="cell-strong">#{r.medicationName}</td>
+                      <td>#{r.dosage}</td>
+                      <td>#{r.frequency}</td>
+                      <td>#{r.refillsRemaining}</td>
+                      <td>#{r.status}</td>
+                      <td><span class="#{ux.refillBadge(r.refillStatus)}">#{ux.refillLabel(r.refillStatus)}</span></td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </ui:fragment>
+        </div>
+      </section>
+    </ui:fragment>
+
+    <!-- ============ MESSAGES ============ -->
+    <ui:fragment rendered="#{chart.tab == 'messages'}">
+      <section class="card">
+        <div class="card-head">
+          <h2>Message threads</h2>
+          <a class="btn btn--ghost btn--sm"
+             href="#{request.contextPath}/app/staff/messages.xhtml?patient=#{chart.patientId}">Open messages</a>
+        </div>
+        <div class="card-body">
+          <ui:fragment rendered="#{empty chart.threads}">
+            <div class="empty-state"><div class="glyph" aria-hidden="true">✉</div>
+              <h3>No conversations</h3><p>Conversations with this patient will appear here.</p></div>
+          </ui:fragment>
+          <div class="stack">
+            <ui:repeat value="#{chart.threads}" var="t">
+              <div class="row-between" style="border-bottom: 1px solid var(--line-soft); padding-bottom: 8px;">
+                <div>
+                  <div class="cell-strong">#{t.subject}</div>
+                  <div class="cell-muted">Last message #{ux.fmtDateTime(t.lastMessageAt)}</div>
+                </div>
+                <a class="btn btn--ghost btn--sm"
+                   href="#{request.contextPath}/app/staff/messages.xhtml?patient=#{chart.patientId}">Open</a>
+              </div>
+            </ui:repeat>
+          </div>
+        </div>
+      </section>
+    </ui:fragment>
+
+    <!-- ============ DOCUMENTS ============ -->
+    <ui:fragment rendered="#{chart.tab == 'documents'}">
+      <section class="card">
+        <div class="card-head"><h2>Documents</h2></div>
+        <div class="card-body">
+          <ui:fragment rendered="#{empty chart.docs}">
+            <div class="empty-state"><div class="glyph" aria-hidden="true">▣</div>
+              <h3>No documents</h3><p>Documents on file for this patient will appear here.</p></div>
+          </ui:fragment>
+          <ui:fragment rendered="#{not empty chart.docs}">
+            <div class="table-wrap">
+              <table class="data">
+                <thead><tr><th>Title</th><th>Uploaded</th><th>Size</th><th>Status</th><th>Download</th></tr></thead>
+                <tbody>
+                  <ui:repeat value="#{chart.docs}" var="d">
+                    <tr>
+                      <td class="cell-strong">#{d.title}</td>
+                      <td class="cell-muted">#{ux.fmtDateTime(d.uploadedAt)}</td>
+                      <td class="cell-muted">#{ux.fileSize(d.sizeBytes)}</td>
+                      <td><span class="#{ux.docBadge(d.status)}">#{ux.docLabel(d.status)}</span></td>
+                      <td><a class="btn btn--ghost btn--sm" href="#{request.contextPath}/app/files/#{d.id}">Download</a></td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </ui:fragment>
+        </div>
+      </section>
+    </ui:fragment>
+
+    <!-- ============ AUDIT ============ -->
+    <ui:fragment rendered="#{chart.tab == 'audit'}">
+      <section class="card">
+        <div class="card-head"><h2>Audit history</h2></div>
+        <div class="card-body">
+          <ui:fragment rendered="#{empty chart.auditEvents}">
+            <div class="empty-state"><div class="glyph" aria-hidden="true">⚿</div>
+              <h3>No audit events</h3><p>Record access and changes are logged here.</p></div>
+          </ui:fragment>
+          <ui:fragment rendered="#{not empty chart.auditEvents}">
+            <div class="table-wrap">
+              <table class="data">
+                <thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Target</th></tr></thead>
+                <tbody>
+                  <ui:repeat value="#{chart.auditEvents}" var="ev">
+                    <tr>
+                      <td class="cell-nowrap cell-muted">#{ux.fmtDateTime(ev.occurredAt)}</td>
+                      <td>#{ev.actorName} <span class="cell-muted">(#{ux.roleLabel(ev.actorRole)})</span></td>
+                      <td><span class="chip chip--line mono">#{ev.action}</span></td>
+                      <td class="cell-muted">#{ev.targetType} #{ev.targetId}</td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </ui:fragment>
+        </div>
+      </section>
+    </ui:fragment>
+  </ui:define>
+</ui:composition>
+</html>

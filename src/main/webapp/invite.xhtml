@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+<ui:composition template="/WEB-INF/templates/public.xhtml">
+  <ui:define name="title">Activate your invite</ui:define>
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewParam name="token" value="#{invite.token}" />
+      <f:viewAction action="#{invite.onLoad()}" />
+    </f:metadata>
+    <h2>Activate your account</h2>
+    <p class="sub">
+      <ui:fragment rendered="#{invite.valid}">
+        Invitation for <strong>#{invite.email}</strong> · #{ux.roleLabel(invite.role)}
+      </ui:fragment>
+      <ui:fragment rendered="#{not invite.valid}">
+        <span class="text-danger">#{invite.error}</span>
+      </ui:fragment>
+    </p>
+    <h:messages globalOnly="true" infoClass="alert alert--info" warnClass="alert alert--warning"
+                errorClass="alert alert--error" fatalClass="alert alert--error" styleClass="messages" />
+    <h:form id="inviteForm" rendered="#{invite.valid}">
+      <div class="form-grid">
+        <div class="field">
+          <label for="password" class="req">Choose a password</label>
+          <h:inputSecret id="password" value="#{invite.password}" styleClass="input" required="true"
+                         requiredMessage="Password is required." maxlength="128" />
+          <h:message for="password" styleClass="field-error" />
+          <div class="help">At least 10 characters with an uppercase letter, a lowercase letter, and a digit.</div>
+        </div>
+        <div class="field">
+          <label for="phone">Phone (optional)</label>
+          <h:inputText id="phone" value="#{invite.phone}" styleClass="input" maxlength="30" />
+        </div>
+        <div class="field" rendered="#{invite.isPatientInvite()}">
+          <label for="dob" class="req">Date of birth</label>
+          <h:inputText id="dob" value="#{invite.dateOfBirth}" styleClass="input" type="date"
+                       required="true" requiredMessage="Date of birth is required.">
+            <f:convertDateTime pattern="yyyy-MM-dd" type="date" />
+          </h:inputText>
+          <h:message for="dob" styleClass="field-error" />
+        </div>
+      </div>
+      <div style="margin-top: 18px;">
+        <h:commandButton value="Activate account" action="#{invite.accept()}"
+                         styleClass="btn btn--primary btn--lg btn--block" />
+      </div>
+    </h:form>
+    <div class="auth-links">
+      <a href="#{request.contextPath}/login.xhtml">Back to sign in</a>
+    </div>
+  </ui:define>
+</ui:composition>
+</html>

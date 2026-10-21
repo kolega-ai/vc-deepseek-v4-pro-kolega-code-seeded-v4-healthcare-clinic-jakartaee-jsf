@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Book an appointment" />
+  <ui:define name="title">Book an appointment</ui:define>
+  <ui:define name="breadcrumb">Book an appointment</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{booking.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Book an appointment</h1>
+        <p class="sub">Choose a visit type, a provider, and a time. The clinic confirms every request.</p>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step #{booking.step == 1 ? 'active' : (booking.step gt 1 ? 'done' : '')}"><span class="n">1</span> Type</div>
+      <div class="step #{booking.step == 2 ? 'active' : (booking.step gt 2 ? 'done' : '')}"><span class="n">2</span> Provider</div>
+      <div class="step #{booking.step == 3 ? 'active' : (booking.step gt 3 ? 'done' : '')}"><span class="n">3</span> Date &amp; time</div>
+      <div class="step #{booking.step == 4 ? 'active' : ''}"><span class="n">4</span> Confirm</div>
+    </div>
+
+    <!-- STEP 1: appointment type -->
+    <ui:fragment rendered="#{booking.step == 1}">
+      <section class="card">
+        <div class="card-head"><h2>What kind of visit?</h2></div>
+        <div class="card-body">
+          <h:form id="typeForm">
+            <div class="form-grid">
+              <div class="field field--wide">
+                <label for="bookType" class="req">Appointment type</label>
+                <h:selectOneMenu id="bookType" value="#{booking.typeId}" styleClass="select"
+                                 required="true" requiredMessage="Choose an appointment type.">
+                  <f:selectItems value="#{booking.types}" var="t"
+                                 itemValue="#{t.id}" itemLabel="#{t.name}" />
+                </h:selectOneMenu>
+                <h:message for="bookType" styleClass="field-error" />
+              </div>
+            </div>
+            <div style="margin-top: 16px;">
+              <h:commandButton value="Next: choose provider" action="#{booking.choose(booking.typeId)}"
+                               styleClass="btn btn--primary" />
+            </div>
+          </h:form>
+        </div>
+      </section>
+    </ui:fragment>
+
+    <!-- STEP 2: provider -->
+    <ui:fragment rendered="#{booking.step == 2}">
+      <section class="card">
+        <div class="card-head"><h2>Who would you like to see?</h2></div>
+        <div class="card-body">
+          <h:form id="providerForm">
+            <div class="form-grid">
+              <div class="field field--wide">
+                <label for="bookProvider" class="req">Provider</label>
+                <h:selectOneMenu id="bookProvider" value="#{booking.providerId}" styleClass="select"
+                                 required="true" requiredMessage="Choose a provider.">
+                  <f:selectItems value="#{booking.providers}" var="p"
+                                 itemValue="#{p.id}" itemLabel="#{p.fullName()}" />
+                </h:selectOneMenu>
+                <h:message for="bookProvider" styleClass="field-error" />
+              </div>
+            </div>
+            <div style="margin-top: 16px;" class="cluster">
+              <h:commandButton value="‹ Back" action="#{booking.back()}" styleClass="btn btn--ghost" />
+              <h:commandButton value="Next: pick a time" action="#{booking.chooseProvider(booking.providerId)}"
+                               styleClass="btn btn--primary" />
+            </div>
+          </h:form>
+        </div>
+      </section>
+    </ui:fragment>
+
+    <!-- STEP 3: date + slot -->
+    <ui:fragment rendered="#{booking.step == 3}">
+      <section class="card">
+        <div class="card-head"><h2>Pick a day and time</h2></div>
+        <div class="card-body">
+          <h:form id="slotForm">
+            <div class="form-grid">
+              <div class="field">
+                <label for="bookDate" class="req">Date</label>
+                <h:inputText id="bookDate" value="#{booking.date}" styleClass="input" pt:type="date"
+                             required="true" requiredMessage="Pick a date.">
+                  <f:convertDateTime pattern="yyyy-MM-dd" type="date" />
+                </h:inputText>
+                <h:message for="bookDate" styleClass="field-error" />
+              </div>
+              <div class="field">
+                <label>&#160;</label>
+                <h:commandButton value="Load slots" action="#{booking.loadSlots()}" styleClass="btn btn--ghost" />
+              </div>
+            </div>
+
+            <ui:fragment rendered="#{empty booking.slots}">
+              <div class="empty-state">
+                <div class="glyph" aria-hidden="true">▦</div>
+                <h3>No slots on this day</h3>
+                <p>Pick another date and load the available slots again.</p>
+              </div>
+            </ui:fragment>
+            <ui:fragment rendered="#{not empty booking.slots}">
+              <h3 style="margin-bottom: 8px;">Available times</h3>
+              <div class="cluster">
+                <ui:repeat value="#{booking.slots}" var="slot">
+                  <h:commandButton value="#{ux.fmtTime(slot)}" action="#{booking.chooseSlot(slot)}"
+                                   styleClass="btn btn--ghost btn--sm" />
+                </ui:repeat>
+              </div>
+            </ui:fragment>
+
+            <div style="margin-top: 16px;">
+              <h:commandButton value="‹ Back" action="#{booking.back()}" styleClass="btn btn--ghost" />
+            </div>
+          </h:form>
+        </div>
+      </section>
+    </ui:fragment>
+
+    <!-- STEP 4: reason + confirm -->
+    <ui:fragment rendered="#{booking.step == 4}">
+      <section class="card">
+        <div class="card-head"><h2>Almost done</h2></div>
+        <div class="card-body">
+          <div class="detail-grid" style="margin-bottom: 16px;">
+            <div class="kv"><div class="k">Type</div><div class="v">#{booking.typeName}</div></div>
+            <div class="kv"><div class="k">Provider</div><div class="v">#{booking.providerName}</div></div>
+            <div class="kv"><div class="k">Time</div><div class="v">#{ux.fmtDateTime(booking.start)}</div></div>
+          </div>
+          <h:form id="confirmForm">
+            <div class="form-grid">
+              <div class="field field--wide">
+                <label for="bookReason" class="req">Reason for the visit</label>
+                <h:inputTextarea id="bookReason" value="#{booking.reason}" styleClass="textarea"
+                                 required="true" requiredMessage="Please describe why you want this appointment."
+                                 maxlength="1000" />
+                <h:message for="bookReason" styleClass="field-error" />
+              </div>
+              <div class="field field--wide">
+                <label for="bookNotes">Anything else the clinic should know?</label>
+                <h:inputTextarea id="bookNotes" value="#{booking.notes}" styleClass="textarea" maxlength="2000" />
+              </div>
+            </div>
+            <div style="margin-top: 16px;" class="cluster">
+              <h:commandButton value="‹ Back" action="#{booking.back()}" styleClass="btn btn--ghost" />
+              <h:commandButton value="Request appointment" action="#{booking.confirm()}" styleClass="btn btn--primary" />
+            </div>
+          </h:form>
+        </div>
+      </section>
+    </ui:fragment>
+  </ui:define>
+</ui:composition>
+</html>

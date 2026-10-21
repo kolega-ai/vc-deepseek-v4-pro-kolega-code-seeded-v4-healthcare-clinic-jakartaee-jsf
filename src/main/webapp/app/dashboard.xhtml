@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Dashboard" />
+  <ui:define name="title">Dashboard</ui:define>
+  <ui:define name="breadcrumb">Dashboard</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{dashboard.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>#{dashboard.greeting()}, #{appSession.ctx().fullName}</h1>
+        <p class="sub">
+          <ui:fragment rendered="#{appSession.isPatient()}">Here's what's happening with your care at #{dashboard.clinicName()}.</ui:fragment>
+          <ui:fragment rendered="#{appSession.isStaff()}">Clinic overview for today.</ui:fragment>
+        </p>
+      </div>
+    </div>
+
+    <!-- ================= PATIENT ================= -->
+    <ui:fragment rendered="#{appSession.isPatient()}">
+      <div class="stat-grid">
+        <div class="stat">
+          <div class="stat-chip teal" aria-hidden="true">▦</div>
+          <div><div class="stat-value">#{dashboard.upcoming.size()}</div><div class="stat-label">Upcoming appointments</div></div>
+        </div>
+        <div class="stat">
+          <div class="stat-chip blue" aria-hidden="true">✉</div>
+          <div><div class="stat-value">#{dashboard.unreadMessages}</div><div class="stat-label">Unread messages</div></div>
+        </div>
+        <div class="stat">
+          <div class="stat-chip amber" aria-hidden="true">▣</div>
+          <div><div class="stat-value">#{dashboard.pendingForms}</div><div class="stat-label">Forms in review</div></div>
+        </div>
+        <div class="stat">
+          <div class="stat-chip violet" aria-hidden="true">✚</div>
+          <div><div class="stat-value">#{dashboard.activeRx.size()}</div><div class="stat-label">Active prescriptions</div></div>
+        </div>
+      </div>
+
+      <div class="quick-links" style="margin-bottom: 20px;">
+        <a class="quick-link" href="#{request.contextPath}/app/patient/book.xhtml"><span aria-hidden="true">＋</span> Book an appointment</a>
+        <a class="quick-link" href="#{request.contextPath}/app/patient/messages.xhtml"><span aria-hidden="true">✉</span> Message the clinic</a>
+        <a class="quick-link" href="#{request.contextPath}/app/patient/documents.xhtml"><span aria-hidden="true">⇧</span> Upload a form</a>
+        <a class="quick-link" href="#{request.contextPath}/app/patient/prescriptions.xhtml"><span aria-hidden="true">✚</span> Request a refill</a>
+      </div>
+
+      <div class="grid-2">
+        <section class="card">
+          <div class="card-head">
+            <h2>Upcoming appointments</h2>
+            <h:link outcome="/app/patient/appointments.xhtml" styleClass="btn btn--ghost btn--sm">View all</h:link>
+          </div>
+          <div class="card-body">
+            <ui:fragment rendered="#{empty dashboard.upcoming}">
+              <div class="empty-state">
+                <div class="glyph" aria-hidden="true">▦</div>
+                <h3>Nothing on the calendar</h3>
+                <p>Book your next visit in a few clicks.</p>
+                <a class="btn btn--primary" href="#{request.contextPath}/app/patient/book.xhtml">Book appointment</a>
+              </div>
+            </ui:fragment>
+            <ui:fragment rendered="#{not empty dashboard.upcoming}">
+              <div class="table-wrap">
+                <table class="data">
+                  <thead><tr><th>When</th><th>Provider</th><th>Type</th><th>Status</th></tr></thead>
+                  <tbody>
+                    <ui:repeat value="#{dashboard.upcoming}" var="a">
+                      <tr>
+                        <td class="cell-strong">#{ux.fmtDateTime(a.startTime)}</td>
+                        <td>#{a.provider.fullName()}</td>
+                        <td>#{a.type.name}</td>
+                        <td><span class="#{ux.appointmentBadge(a.status)}">#{ux.appointmentLabel(a.status)}</span></td>
+                      </tr>
+                    </ui:repeat>
+                  </tbody>
+                </table>
+              </div>
+            </ui:fragment>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <h2>Recent visit summaries</h2>
+            <h:link outcome="/app/patient/summaries.xhtml" styleClass="btn btn--ghost btn--sm">View all</h:link>
+          </div>
+          <div class="card-body">
+            <ui:fragment rendered="#{empty dashboard.recentSummaries}">
+              <div class="empty-state"><div class="glyph" aria-hidden="true">▤</div>
+                <h3>No summaries yet</h3><p>Released visit summaries will appear here after your visits.</p></div>
+            </ui:fragment>
+            <div class="stack">
+              <ui:repeat value="#{dashboard.recentSummaries}" var="v">
+                <div class="row-between" style="border-bottom: 1px solid var(--line-soft); padding-bottom: 8px;">
+                  <div>
+                    <div class="cell-strong">#{v.provider.fullName()}</div>
+                    <div class="cell-muted">#{ux.fmtDate(v.appointment.startTime.toLocalDate())} · #{v.appointment.type.name}</div>
+                  </div>
+                  <a class="btn btn--ghost btn--sm" href="#{request.contextPath}/app/patient/summaries.xhtml?id=#{v.id}">Open</a>
+                </div>
+              </ui:repeat>
+            </div>
+          </div>
+        </section>
+      </div>
+    </ui:fragment>
+
+    <!-- ================= FRONT DESK ================= -->
+    <ui:fragment rendered="#{appSession.isFrontDesk()}">
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-chip teal" aria-hidden="true">▦</div>
+          <div><div class="stat-value">#{dashboard.todayAll.size()}</div><div class="stat-label">On today's board</div></div></div>
+        <div class="stat"><div class="stat-chip blue" aria-hidden="true">✉</div>
+          <div><div class="stat-value">#{dashboard.requestedCount}</div><div class="stat-label">Booking requests</div></div></div>
+        <div class="stat"><div class="stat-chip amber" aria-hidden="true">▣</div>
+          <div><div class="stat-value">#{dashboard.formsQueueCount}</div><div class="stat-label">Forms to verify</div></div></div>
+        <div class="stat"><div class="stat-chip violet" aria-hidden="true">✉</div>
+          <div><div class="stat-value">#{dashboard.unreadMessages}</div><div class="stat-label">Unread messages</div></div></div>
+      </div>
+      <div class="quick-links" style="margin-bottom: 20px;">
+        <a class="quick-link" href="#{request.contextPath}/app/staff/frontdesk/confirm.xhtml"><span>✓</span> Confirm booking requests</a>
+        <a class="quick-link" href="#{request.contextPath}/app/staff/schedule.xhtml"><span>▦</span> Schedule board</a>
+        <a class="quick-link" href="#{request.contextPath}/app/staff/frontdesk/forms.xhtml"><span>▣</span> Verify forms</a>
+        <a class="quick-link" href="#{request.contextPath}/app/staff/patients.xhtml"><span>◉</span> Find a patient</a>
+      </div>
+      <section class="card">
+        <div class="card-head"><h2>Today's board</h2>
+          <h:link outcome="/app/staff/schedule.xhtml" styleClass="btn btn--ghost btn--sm">Open schedule board</h:link></div>
+        <div class="card-body">
+          <ui:fragment rendered="#{empty dashboard.todayAll}">
+            <div class="empty-state"><div class="glyph" aria-hidden="true">▦</div><h3>No appointments today</h3>
+              <p>Enjoy the quiet - or book someone in.</p></div>
+          </ui:fragment>
+          <ui:fragment rendered="#{not empty dashboard.todayAll}">
+            <div class="table-wrap">
+              <table class="data">
+                <thead><tr><th>Time</th><th>Patient</th><th>Provider</th><th>Type</th><th>Status</th></tr></thead>
+                <tbody>
+                  <ui:repeat value="#{dashboard.todayAll}" var="a">
+                    <tr>
+                      <td class="cell-strong">#{ux.fmtTime(a.startTime)}</td>
+                      <td><a href="#{request.contextPath}/app/staff/patient.xhtml?id=#{a.patient.id}">#{a.patient.fullName()}</a></td>
+                      <td>#{a.provider.fullName()}</td>
+                      <td>#{a.type.name}</td>
+                      <td><span class="#{ux.appointmentBadge(a.status)}">#{ux.appointmentLabel(a.status)}</span></td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </ui:fragment>
+        </div>
+      </section>
+    </ui:fragment>
+
+    <!-- ================= CLINICIAN ================= -->
+    <ui:fragment rendered="#{appSession.isClinician()}">
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-chip teal" aria-hidden="true">▦</div>
+          <div><div class="stat-value">#{dashboard.myToday.size()}</div><div class="stat-label">My appointments today</div></div></div>
+        <div class="stat"><div class="stat-chip blue" aria-hidden="true">✚</div>
+          <div><div class="stat-value">#{dashboard.refillQueue.size()}</div><div class="stat-label">Refill requests</div></div></div>
+        <div class="stat"><div class="stat-chip amber" aria-hidden="true">▤</div>
+          <div><div class="stat-value">#{dashboard.draftCount}</div><div class="stat-label">Draft summaries</div></div></div>
+        <div class="stat"><div class="stat-chip violet" aria-hidden="true">✉</div>
+          <div><div class="stat-value">#{dashboard.unreadMessages}</div><div class="stat-label">Unread messages</div></div></div>
+      </div>
+      <div class="quick-links" style="margin-bottom: 20px;">
+        <a class="quick-link" href="#{request.contextPath}/app/staff/clinician/queue.xhtml"><span>▦</span> My queue</a>
+        <a class="quick-link" href="#{request.contextPath}/app/staff/clinician/refills.xhtml"><span>✚</span> Refill queue</a>
+        <a class="quick-link" href="#{request.contextPath}/app/staff/patients.xhtml"><span>◉</span> Find a patient</a>
+        <a class="quick-link" href="#{request.contextPath}/app/staff/schedule.xhtml"><span>▤</span> Schedule</a>
+      </div>
+      <div class="grid-2">
+        <section class="card">
+          <div class="card-head"><h2>My appointments today</h2>
+            <h:link outcome="/app/staff/clinician/queue.xhtml" styleClass="btn btn--ghost btn--sm">Open queue</h:link></div>
+          <div class="card-body">
+            <ui:fragment rendered="#{empty dashboard.myToday}">
+              <div class="empty-state"><div class="glyph" aria-hidden="true">▦</div><h3>No appointments today</h3></div>
+            </ui:fragment>
+            <div class="stack">
+              <ui:repeat value="#{dashboard.myToday}" var="a">
+                <div class="row-between" style="border-bottom: 1px solid var(--line-soft); padding-bottom: 8px;">
+                  <div>
+                    <div class="cell-strong">#{ux.fmtTime(a.startTime)} · #{a.patient.fullName()}</div>
+                    <div class="cell-muted">#{a.type.name} · <span class="#{ux.appointmentBadge(a.status)}">#{ux.appointmentLabel(a.status)}</span></div>
+                  </div>
+                  <a class="btn btn--ghost btn--sm" href="#{request.contextPath}/app/staff/clinician/chart.xhtml?id=#{a.patient.id}">Open chart</a>
+                </div>
+              </ui:repeat>
+            </div>
+          </div>
+        </section>
+        <section class="card">
+          <div class="card-head"><h2>Refill queue</h2>
+            <h:link outcome="/app/staff/clinician/refills.xhtml" styleClass="btn btn--ghost btn--sm">Review all</h:link></div>
+          <div class="card-body">
+            <ui:fragment rendered="#{empty dashboard.refillQueue}">
+              <div class="empty-state"><div class="glyph" aria-hidden="true">✚</div><h3>No refill requests</h3></div>
+            </ui:fragment>
+            <div class="stack">
+              <ui:repeat value="#{dashboard.refillQueue}" var="r" varStatus="st">
+                <ui:fragment rendered="#{st.index lt 4}">
+                  <div class="row-between" style="border-bottom: 1px solid var(--line-soft); padding-bottom: 8px;">
+                    <div>
+                      <div class="cell-strong">#{r.patient.fullName()} · #{r.medicationName} #{r.dosage}</div>
+                      <div class="cell-muted">Requested #{ux.fmtDate(r.refillRequestedAt.toLocalDate())}</div>
+                    </div>
+                    <span class="#{ux.refillBadge(r.refillStatus)}">#{ux.refillLabel(r.refillStatus)}</span>
+                  </div>
+                </ui:fragment>
+              </ui:repeat>
+            </div>
+          </div>
+        </section>
+      </div>
+    </ui:fragment>
+
+    <!-- ================= ADMIN ================= -->
+    <ui:fragment rendered="#{appSession.isAdmin()}">
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-chip teal" aria-hidden="true">◉</div>
+          <div><div class="stat-value">#{dashboard.userCount}</div><div class="stat-label">Portal users</div></div></div>
+        <div class="stat"><div class="stat-chip blue" aria-hidden="true">◉</div>
+          <div><div class="stat-value">#{dashboard.patientCount}</div><div class="stat-label">Active patients</div></div></div>
+        <div class="stat"><div class="stat-chip violet" aria-hidden="true">＋</div>
+          <div><div class="stat-value">#{dashboard.providerCount}</div><div class="stat-label">Providers</div></div></div>
+        <div class="stat"><div class="stat-chip green" aria-hidden="true">▦</div>
+          <div><div class="stat-value">#{dashboard.todayAppointmentCount}</div><div class="stat-label">Appointments today</div></div></div>
+      </div>
+      <div class="quick-links" style="margin-bottom: 20px;">
+        <a class="quick-link" href="#{request.contextPath}/app/admin/users.xhtml"><span>◉</span> Manage users</a>
+        <a class="quick-link" href="#{request.contextPath}/app/admin/audit.xhtml"><span>⚿</span> Audit log</a>
+        <a class="quick-link" href="#{request.contextPath}/app/admin/exports.xhtml"><span>⇩</span> Exports</a>
+        <a class="quick-link" href="#{request.contextPath}/app/admin/imports.xhtml"><span>⇧</span> Imports</a>
+      </div>
+      <section class="card">
+        <div class="card-head"><h2>Recent activity</h2>
+          <h:link outcome="/app/admin/audit.xhtml" styleClass="btn btn--ghost btn--sm">Open audit log</h:link></div>
+        <div class="card-body">
+          <ui:fragment rendered="#{empty dashboard.recentAudit}">
+            <div class="empty-state"><h3>No activity yet</h3></div>
+          </ui:fragment>
+          <div class="table-wrap">
+            <table class="data">
+              <thead><tr><th>When</th><th>Actor</th><th>Action</th><th>Target</th></tr></thead>
+              <tbody>
+                <ui:repeat value="#{dashboard.recentAudit}" var="ev">
+                  <tr>
+                    <td class="cell-nowrap cell-muted">#{ux.fmtDateTime(ev.occurredAt)}</td>
+                    <td>#{ev.actorName} <span class="cell-muted">(#{ux.roleLabel(ev.actorRole)})</span></td>
+                    <td><span class="chip chip--line mono">#{ev.action}</span></td>
+                    <td class="cell-muted">#{ev.targetType} #{ev.targetId}</td>
+                  </tr>
+                </ui:repeat>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </ui:fragment>
+
+    <!-- ================= Notifications (all roles) ================= -->
+    <section class="card">
+      <div class="card-head"><h2>Recent notifications</h2>
+        <h:link outcome="/app/notifications.xhtml" styleClass="btn btn--ghost btn--sm">View all</h:link></div>
+      <div class="card-body">
+        <ui:fragment rendered="#{empty dashboard.recentNotifications}">
+          <div class="empty-state"><h3>No notifications</h3><p>Workflow updates will land here.</p></div>
+        </ui:fragment>
+        <div class="stack">
+          <ui:repeat value="#{dashboard.recentNotifications}" var="n">
+            <div class="row-between" style="border-bottom: 1px solid var(--line-soft); padding-bottom: 8px;">
+              <div>
+                <div class="cell-strong">
+                  <ui:fragment rendered="#{n.readAt == null}"><span class="badge badge--teal badge--solid" style="margin-right: 6px;">New</span></ui:fragment>
+                  #{n.title}
+                </div>
+                <div class="cell-muted">#{ux.truncated(n.body, 140)} · #{ux.fmtDateTime(n.createdAt)}</div>
+              </div>
+              <ui:fragment rendered="#{not empty n.link}">
+                <a class="btn btn--ghost btn--sm" href="#{request.contextPath}#{n.link}">Open</a>
+              </ui:fragment>
+            </div>
+          </ui:repeat>
+        </div>
+      </div>
+    </section>
+  </ui:define>
+</ui:composition>
+</html>

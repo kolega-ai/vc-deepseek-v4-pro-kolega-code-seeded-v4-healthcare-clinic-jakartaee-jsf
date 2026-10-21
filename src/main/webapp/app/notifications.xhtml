@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Notifications" />
+  <ui:define name="title">Notifications</ui:define>
+  <ui:define name="breadcrumb">Notifications</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{notifications.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Notifications</h1>
+        <p class="sub">Updates about your appointments, messages, forms, and prescriptions.</p>
+      </div>
+      <div class="page-actions">
+        <h:form id="markAllForm" rendered="#{not empty notifications.page.items}">
+          <h:commandButton value="Mark all as read" action="#{notifications.markAllRead()}" styleClass="btn btn--ghost" />
+        </h:form>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="card-body">
+        <ui:fragment rendered="#{empty notifications.page.items}">
+          <div class="empty-state">
+            <div class="glyph" aria-hidden="true">🔔</div>
+            <h3>Nothing here yet</h3>
+            <p>When something happens with your care, you'll see it here.</p>
+          </div>
+        </ui:fragment>
+        <div class="stack">
+          <ui:repeat value="#{notifications.page.items}" var="n">
+            <div class="row-between" style="border-bottom: 1px solid var(--line-soft); padding: 10px 0;">
+              <div>
+                <div class="cell-strong">
+                  <ui:fragment rendered="#{n.readAt == null}">
+                    <span class="badge badge--teal badge--solid" style="margin-right: 8px;">New</span>
+                  </ui:fragment>
+                  #{n.title}
+                </div>
+                <div class="cell-muted">#{n.body} · #{ux.fmtDateTime(n.createdAt)}</div>
+              </div>
+              <div class="row-actions">
+                <ui:fragment rendered="#{not empty n.link}">
+                  <a class="btn btn--ghost btn--sm" href="#{request.contextPath}#{n.link}">Open</a>
+                </ui:fragment>
+                <ui:fragment rendered="#{n.readAt == null}">
+                  <h:form id="read#{n.id}">
+                    <h:commandLink action="#{notifications.markRead(n.id)}" styleClass="btn btn--ghost btn--sm">
+                      Mark read
+                    </h:commandLink>
+                  </h:form>
+                </ui:fragment>
+              </div>
+            </div>
+          </ui:repeat>
+        </div>
+      </div>
+      <div class="card-foot row-between">
+        <span class="text-sm text-muted">Page #{notifications.pageIndex + 1}</span>
+        <div class="cluster">
+          <h:form id="prevForm">
+            <h:commandButton value="‹ Newer" action="#{notifications.prevPage()}" styleClass="btn btn--ghost btn--sm"
+                             disabled="#{notifications.pageIndex == 0}" />
+          </h:form>
+          <h:form id="nextForm">
+            <h:commandButton value="Older ›" action="#{notifications.nextPage()}" styleClass="btn btn--ghost btn--sm"
+                             disabled="#{not not notifications.hasMore()}" />
+          </h:form>
+        </div>
+      </div>
+    </section>
+  </ui:define>
+</ui:composition>
+</html>

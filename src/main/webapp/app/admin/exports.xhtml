@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Exports" />
+  <ui:define name="title">Exports</ui:define>
+  <ui:define name="breadcrumb">Admin · Exports</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{adminExports.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Exports</h1>
+        <p class="sub">CSV downloads for schedules, visit summaries, and the audit log. Every export is audited.</p>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <section class="card">
+        <div class="card-head"><h2>Schedule</h2></div>
+        <div class="card-body">
+          <h:form id="scheduleExportForm">
+            <div class="form-grid">
+              <div class="field">
+                <label for="from" class="req">From</label>
+                <h:inputText id="from" value="#{adminExports.from}" styleClass="input" type="date"
+                             required="true" requiredMessage="From date is required.">
+                  <f:convertDateTime pattern="yyyy-MM-dd" type="date" />
+                </h:inputText>
+                <h:message for="from" styleClass="field-error" />
+              </div>
+              <div class="field">
+                <label for="to" class="req">To</label>
+                <h:inputText id="to" value="#{adminExports.to}" styleClass="input" type="date"
+                             required="true" requiredMessage="To date is required.">
+                  <f:convertDateTime pattern="yyyy-MM-dd" type="date" />
+                </h:inputText>
+                <h:message for="to" styleClass="field-error" />
+              </div>
+              <div class="field">
+                <label for="providerId">Provider</label>
+                <h:selectOneMenu id="providerId" value="#{adminExports.providerId}" styleClass="select">
+                  <f:selectItem itemValue="#{null}" itemLabel="All providers" />
+                  <f:selectItems value="#{adminExports.providerList}" var="p"
+                                 itemValue="#{p.id}" itemLabel="#{p.fullName()}" />
+                </h:selectOneMenu>
+              </div>
+              <div class="field">
+                <label for="status">Status</label>
+                <h:selectOneMenu id="status" value="#{adminExports.status}" styleClass="select">
+                  <f:selectItem itemValue="#{null}" itemLabel="All statuses" />
+                  <f:selectItems value="#{adminExports.statuses}" var="s"
+                                 itemValue="#{s.name()}" itemLabel="#{ux.appointmentLabel(s)}" />
+                </h:selectOneMenu>
+              </div>
+            </div>
+            <div style="margin-top: 16px;">
+              <h:commandButton value="Export schedule" action="#{adminExports.exportScheduleCsv()}"
+                               styleClass="btn btn--primary" />
+            </div>
+          </h:form>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>Visit summaries</h2></div>
+        <div class="card-body">
+          <h:form id="summariesExportForm">
+            <div class="form-grid">
+              <div class="field">
+                <label for="sumFrom" class="req">From</label>
+                <h:inputText id="sumFrom" value="#{adminExports.sumFrom}" styleClass="input" type="date"
+                             required="true" requiredMessage="From date is required.">
+                  <f:convertDateTime pattern="yyyy-MM-dd" type="date" />
+                </h:inputText>
+                <h:message for="sumFrom" styleClass="field-error" />
+              </div>
+              <div class="field">
+                <label for="sumTo" class="req">To</label>
+                <h:inputText id="sumTo" value="#{adminExports.sumTo}" styleClass="input" type="date"
+                             required="true" requiredMessage="To date is required.">
+                  <f:convertDateTime pattern="yyyy-MM-dd" type="date" />
+                </h:inputText>
+                <h:message for="sumTo" styleClass="field-error" />
+              </div>
+              <div class="field">
+                <label for="sumProviderId">Provider</label>
+                <h:selectOneMenu id="sumProviderId" value="#{adminExports.sumProviderId}" styleClass="select">
+                  <f:selectItem itemValue="#{null}" itemLabel="All providers" />
+                  <f:selectItems value="#{adminExports.providerList}" var="p"
+                                 itemValue="#{p.id}" itemLabel="#{p.fullName()}" />
+                </h:selectOneMenu>
+              </div>
+            </div>
+            <div class="help" style="margin-top: 12px;">Sensitive clinical data — restricted scope.</div>
+            <div style="margin-top: 16px;">
+              <h:commandButton value="Export summaries" action="#{adminExports.exportSummariesCsv()}"
+                               styleClass="btn btn--primary" />
+            </div>
+          </h:form>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>Audit log</h2></div>
+        <div class="card-body">
+          <h:form id="auditExportForm">
+            <div class="form-grid">
+              <div class="field">
+                <label for="audFrom" class="req">From</label>
+                <h:inputText id="audFrom" value="#{adminExports.audFrom}" styleClass="input" type="date"
+                             required="true" requiredMessage="From date is required.">
+                  <f:convertDateTime pattern="yyyy-MM-dd" type="date" />
+                </h:inputText>
+                <h:message for="audFrom" styleClass="field-error" />
+              </div>
+              <div class="field">
+                <label for="audTo" class="req">To</label>
+                <h:inputText id="audTo" value="#{adminExports.audTo}" styleClass="input" type="date"
+                             required="true" requiredMessage="To date is required.">
+                  <f:convertDateTime pattern="yyyy-MM-dd" type="date" />
+                </h:inputText>
+                <h:message for="audTo" styleClass="field-error" />
+              </div>
+              <div class="field">
+                <label for="audAction">Action</label>
+                <h:inputText id="audAction" value="#{adminExports.audAction}" styleClass="input" maxlength="50" />
+                <div class="help">Optional action code, e.g. LOGIN_SUCCESS.</div>
+              </div>
+            </div>
+            <div style="margin-top: 16px;">
+              <h:commandButton value="Export audit" action="#{adminExports.exportAuditCsv()}"
+                               styleClass="btn btn--primary" />
+            </div>
+          </h:form>
+        </div>
+      </section>
+    </div>
+
+    <section class="card">
+      <div class="card-head"><h2>Recent exports</h2></div>
+      <div class="card-body">
+        <ui:fragment rendered="#{empty adminExports.recent}">
+          <div class="empty-state">
+            <div class="glyph" aria-hidden="true">⇩</div>
+            <h3>No exports yet</h3>
+            <p>Run one of the exports above.</p>
+          </div>
+        </ui:fragment>
+        <ui:fragment rendered="#{not empty adminExports.recent}">
+          <div class="table-wrap">
+            <table class="data">
+              <thead><tr><th>Kind</th><th>Parameters</th><th>Created</th><th>Status</th><th>File</th></tr></thead>
+              <tbody>
+                <ui:repeat value="#{adminExports.recent}" var="e">
+                  <tr>
+                    <td class="cell-strong">#{e.kind.name()}</td>
+                    <td class="cell-muted mono">#{ux.truncated(e.params, 80)}</td>
+                    <td class="cell-muted">#{ux.fmtDateTime(e.createdAt)}</td>
+                    <td><span class="#{ux.jobBadge(e.status)}">#{e.status}</span></td>
+                    <td>
+                      <a class="btn btn--ghost btn--sm"
+                         href="#{request.contextPath}/app/exports/#{e.id}">Download</a>
+                    </td>
+                  </tr>
+                </ui:repeat>
+              </tbody>
+            </table>
+          </div>
+        </ui:fragment>
+      </div>
+    </section>
+  </ui:define>
+</ui:composition>
+</html>

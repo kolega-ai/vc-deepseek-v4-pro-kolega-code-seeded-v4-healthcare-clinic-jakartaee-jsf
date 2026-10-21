@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Refill queue" />
+  <ui:define name="title">Refill queue</ui:define>
+  <ui:define name="breadcrumb">Refill queue</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{refillQueue.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Refill queue</h1>
+        <p class="sub">Review refill requests and record your decision.</p>
+      </div>
+    </div>
+
+    <h:form id="refillForm">
+      <section class="card">
+        <div class="card-head"><h2>Decision notes (shared)</h2></div>
+        <div class="card-body">
+          <div class="grid-3">
+            <div class="field">
+              <label for="approveNote">Approval note (optional)</label>
+              <h:inputTextarea id="approveNote" value="#{refillQueue.approveNote}" styleClass="textarea" maxlength="1000" />
+            </div>
+            <div class="field">
+              <label for="needsInfoQuestion">Question for the patient (needs info)</label>
+              <h:inputTextarea id="needsInfoQuestion" value="#{refillQueue.needsInfoQuestion}" styleClass="textarea" maxlength="1000" />
+            </div>
+            <div class="field">
+              <label for="denyNote">Denial reason (required to deny)</label>
+              <h:inputTextarea id="denyNote" value="#{refillQueue.denyNote}" styleClass="textarea" maxlength="1000" />
+            </div>
+          </div>
+          <div class="help">Notes apply to the request row you act on. Deny requires a reason; needs-info requires a question.</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>Requests</h2></div>
+        <div class="card-body">
+          <ui:fragment rendered="#{empty refillQueue.queue}">
+            <div class="empty-state">
+              <div class="glyph" aria-hidden="true">✚</div>
+              <h3>No refill requests</h3>
+              <p>New refill requests will appear here for review.</p>
+            </div>
+          </ui:fragment>
+          <ui:fragment rendered="#{not empty refillQueue.queue}">
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr><th>Patient</th><th>Medication</th><th>Dosage</th><th>Requested</th><th>Request note</th>
+                      <th>Refill</th><th>Remaining</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                  <ui:repeat value="#{refillQueue.queue}" var="r">
+                    <tr>
+                      <td><a href="#{request.contextPath}/app/staff/clinician/chart.xhtml?id=#{r.patient.id}">#{r.patient.fullName()}</a></td>
+                      <td class="cell-strong">#{r.medicationName}</td>
+                      <td>#{r.dosage}</td>
+                      <td class="cell-muted">#{ux.fmtDateTime(r.refillRequestedAt)}</td>
+                      <td class="cell-muted">#{r.refillRequestNote}</td>
+                      <td><span class="#{ux.refillBadge(r.refillStatus)}">#{ux.refillLabel(r.refillStatus)}</span></td>
+                      <td>#{r.refillsRemaining}</td>
+                      <td>
+                        <div class="row-actions">
+                          <h:commandButton value="Approve" action="#{refillQueue.approve(r.id)}" styleClass="btn btn--success btn--sm">
+                            <f:setPropertyActionListener value="#{r.id}" target="#{refillQueue.selectedId}" />
+                          </h:commandButton>
+                          <h:commandButton value="Needs info" action="#{refillQueue.needsInfo(r.id)}" styleClass="btn btn--warn btn--sm">
+                            <f:setPropertyActionListener value="#{r.id}" target="#{refillQueue.selectedId}" />
+                          </h:commandButton>
+                          <h:commandButton value="Deny" action="#{refillQueue.deny(r.id)}" styleClass="btn btn--danger btn--sm"
+                                           pt:data-confirm="Deny this refill request?">
+                            <f:setPropertyActionListener value="#{r.id}" target="#{refillQueue.selectedId}" />
+                          </h:commandButton>
+                        </div>
+                      </td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </ui:fragment>
+        </div>
+      </section>
+    </h:form>
+  </ui:define>
+</ui:composition>
+</html>

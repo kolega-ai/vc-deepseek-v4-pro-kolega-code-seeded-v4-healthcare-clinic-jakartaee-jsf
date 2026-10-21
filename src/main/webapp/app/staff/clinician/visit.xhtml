@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Visit summary" />
+  <ui:define name="title">Visit summary</ui:define>
+  <ui:define name="breadcrumb">Visit summary</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{visitDetail.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Visit summary</h1>
+        <p class="sub">#{ux.fmtDateTime(visitDetail.visit.appointment.startTime)} ·
+          #{visitDetail.visit.appointment.type.name} ·
+          <span class="#{ux.visitBadge(visitDetail.visit.status)}">#{visitDetail.visit.status}</span></p>
+      </div>
+      <div class="page-actions">
+        <h:form id="releaseForm">
+          <h:commandButton value="Release to patient" action="#{visitDetail.release(visitDetail.visit.id)}"
+                           styleClass="btn btn--success" rendered="#{visitDetail.draft}" />
+        </h:form>
+        <ui:fragment rendered="#{visitDetail.draft}">
+          <a class="btn btn--ghost"
+             href="#{request.contextPath}/app/staff/clinician/visit-form.xhtml?summary=#{visitDetail.visit.id}">Edit draft</a>
+          <h:form id="discardForm" style="display:inline">
+            <h:inputHidden id="discardId" value="#{visitDetail.discardId}" />
+            <h:commandButton value="Discard" action="#{visitDetail.discard()}" styleClass="btn btn--danger"
+                             onclick="document.getElementById('discardForm:discardId').value='#{visitDetail.visit.id}'" />
+          </h:form>
+        </ui:fragment>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="card-head"><h2>Appointment</h2></div>
+      <div class="card-body">
+        <div class="detail-grid">
+          <div class="kv">
+            <div class="k">Patient</div>
+            <div class="v"><a href="#{request.contextPath}/app/staff/clinician/chart.xhtml?id=#{visitDetail.visit.patient.id}">#{visitDetail.visit.patient.fullName()}</a></div>
+          </div>
+          <div class="kv"><div class="k">Appointment</div><div class="v">#{ux.fmtDateTime(visitDetail.visit.appointment.startTime)}</div></div>
+          <div class="kv"><div class="k">Provider</div><div class="v">#{visitDetail.visit.provider.fullName()}</div></div>
+          <div class="kv"><div class="k">Type</div><div class="v">#{visitDetail.visit.appointment.type.name}</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>Assessment / plan</h2></div>
+      <div class="card-body"><div class="pre-wrap">#{visitDetail.visit.diagnosisText}</div></div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>Care instructions</h2></div>
+      <div class="card-body">
+        <ui:fragment rendered="#{not empty visitDetail.visit.careInstructions}">
+          <div class="pre-wrap">#{visitDetail.visit.careInstructions}</div>
+        </ui:fragment>
+        <ui:fragment rendered="#{empty visitDetail.visit.careInstructions}">
+          <span class="cell-muted">None recorded.</span>
+        </ui:fragment>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>Follow-up plan</h2></div>
+      <div class="card-body">
+        <ui:fragment rendered="#{not empty visitDetail.visit.followUpPlan}">
+          <div class="pre-wrap">#{visitDetail.visit.followUpPlan}</div>
+        </ui:fragment>
+        <ui:fragment rendered="#{empty visitDetail.visit.followUpPlan}">
+          <span class="cell-muted">None recorded.</span>
+        </ui:fragment>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>Share this note</h2></div>
+      <div class="card-body">
+        <p class="sub">Send the code to a colleague so they can open this summary in their queue.</p>
+        <div class="mono" style="word-break: break-all;">#{visitDetail.shareCode}</div>
+        <h:form id="openNoteForm" style="margin-top: 12px;">
+          <div class="field field--wide">
+            <label for="noteCode">Note link code</label>
+            <h:inputText id="noteCode" value="#{visitDetail.noteCode}" styleClass="input" />
+          </div>
+          <h:commandButton value="Open note" action="#{visitDetail.openSharedNote()}" styleClass="btn btn--ghost btn--sm" />
+        </h:form>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2><span class="internal-tag">Internal</span> Clinician notes</h2></div>
+      <div class="card-body">
+        <ui:fragment rendered="#{not empty visitDetail.visit.clinicianNotes}">
+          <div class="callout callout--warn">
+            <span class="internal-tag">Internal</span>
+            <div class="pre-wrap">#{visitDetail.visit.clinicianNotes}</div>
+          </div>
+        </ui:fragment>
+        <ui:fragment rendered="#{empty visitDetail.visit.clinicianNotes}">
+          <span class="cell-muted">No internal notes.</span>
+        </ui:fragment>
+      </div>
+    </section>
+  </ui:define>
+</ui:composition>
+</html>

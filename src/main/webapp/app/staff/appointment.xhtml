@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Appointment" />
+  <ui:define name="title">Appointment</ui:define>
+  <ui:define name="breadcrumb">Appointment</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{staffAppointment.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Appointment</h1>
+        <p class="sub">Appointment details and workflow actions.</p>
+      </div>
+      <div class="page-actions">
+        <h:link outcome="/app/staff/appointments.xhtml" styleClass="btn btn--ghost">Back to appointments</h:link>
+      </div>
+    </div>
+
+    <ui:fragment rendered="#{staffAppointment.appointment == null}">
+      <div class="empty-state">
+        <div class="glyph" aria-hidden="true">▦</div>
+        <h3>Appointment not found</h3>
+        <p>This appointment does not exist or you do not have access to it.</p>
+      </div>
+    </ui:fragment>
+
+    <ui:fragment rendered="#{staffAppointment.appointment != null}">
+      <div class="grid-2">
+        <section class="card">
+          <div class="card-head">
+            <h2>Details</h2>
+            <span class="#{ux.appointmentBadge(staffAppointment.appointment.status)}">
+              #{ux.appointmentLabel(staffAppointment.appointment.status)}</span>
+          </div>
+          <div class="card-body">
+            <div class="detail-grid">
+              <div class="kv">
+                <div class="k">Patient</div>
+                <div class="v">
+                  <a href="#{request.contextPath}/app/staff/patient.xhtml?id=#{staffAppointment.patient.id}">
+                    #{staffAppointment.patient.fullName()}</a>
+                </div>
+              </div>
+              <div class="kv"><div class="k">Provider</div><div class="v">#{staffAppointment.appointment.provider.fullName()}</div></div>
+              <div class="kv"><div class="k">Type</div><div class="v">#{staffAppointment.appointment.type.name}</div></div>
+              <div class="kv">
+                <div class="k">Time</div>
+                <div class="v">#{ux.fmtDateTime(staffAppointment.appointment.startTime)} – #{ux.fmtTime(staffAppointment.appointment.endTime)}</div>
+              </div>
+              <div class="kv">
+                <div class="k">Reason</div>
+                <div class="v pre-wrap">#{staffAppointment.appointment.reason}</div>
+              </div>
+              <div class="kv">
+                <div class="k">Notes</div>
+                <div class="v pre-wrap">#{staffAppointment.appointment.notes != null ? staffAppointment.appointment.notes : '—'}</div>
+              </div>
+              <div class="kv">
+                <div class="k">Checked in</div>
+                <div class="v">#{staffAppointment.appointment.checkedInAt != null ? ux.fmtDateTime(staffAppointment.appointment.checkedInAt) : '—'}</div>
+              </div>
+              <div class="kv">
+                <div class="k">Cancel reason</div>
+                <div class="v">#{staffAppointment.appointment.cancelledReason != null ? staffAppointment.appointment.cancelledReason : '—'}</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h2>Actions</h2></div>
+          <div class="card-body">
+            <div class="stack">
+              <h:form id="confirmForm"
+                      rendered="#{staffAppointment.appointment.status == 'REQUESTED' and (session.isFrontDesk() or session.isAdmin())}">
+                <h:commandButton value="Confirm appointment" action="#{staffAppointment.confirm()}"
+                                 styleClass="btn btn--primary btn--block" />
+                <div class="help">Confirms the request and notifies the patient.</div>
+              </h:form>
+
+              <h:form id="checkInForm"
+                      rendered="#{staffAppointment.appointment.status == 'SCHEDULED' and (session.isFrontDesk() or session.isAdmin())}">
+                <h:commandButton value="Check in patient" action="#{staffAppointment.checkIn()}"
+                                 styleClass="btn btn--primary btn--block" />
+              </h:form>
+
+              <h:form id="completeForm"
+                      rendered="#{staffAppointment.appointment.status == 'SCHEDULED' or staffAppointment.appointment.status == 'CHECKED_IN'}">
+                <h:commandButton value="Complete appointment" action="#{staffAppointment.complete()}"
+                                 styleClass="btn btn--success btn--block" />
+              </h:form>
+
+              <h:form id="cancelForm"
+                      rendered="#{(staffAppointment.appointment.status == 'SCHEDULED' or staffAppointment.appointment.status == 'REQUESTED') and (session.isFrontDesk() or session.isAdmin())}">
+                <div class="field">
+                  <label for="cancelReason" class="req">Cancellation reason</label>
+                  <h:inputText id="cancelReason" value="#{staffAppointment.cancelReason}" styleClass="input"
+                               maxlength="500" required="true" requiredMessage="Cancellation reason is required." />
+                  <h:message for="cancelReason" styleClass="field-error" />
+                </div>
+                <div style="margin-top: 8px;">
+                  <h:commandButton value="Cancel appointment" action="#{staffAppointment.cancel()}"
+                                   styleClass="btn btn--danger"
+                                   pt:data-confirm="Cancel this appointment?" />
+                </div>
+              </h:form>
+
+              <h:form id="noShowForm"
+                      rendered="#{staffAppointment.appointment.status == 'SCHEDULED' and staffAppointment.isPastStart() and (session.isFrontDesk() or session.isAdmin())}">
+                <div class="field">
+                  <label for="noShowReason">No-show note</label>
+                  <h:inputText id="noShowReason" value="#{staffAppointment.noShowReason}" styleClass="input" maxlength="500" />
+                </div>
+                <div style="margin-top: 8px;">
+                  <h:commandButton value="Mark as no-show" action="#{staffAppointment.markNoShow()}"
+                                   styleClass="btn btn--danger"
+                                   pt:data-confirm="Mark this appointment as a no-show?" />
+                </div>
+              </h:form>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <ui:fragment rendered="#{staffAppointment.appointment.status == 'SCHEDULED' and (session.isFrontDesk() or session.isAdmin())}">
+        <section class="card">
+          <div class="card-head"><h2>Reschedule</h2></div>
+          <div class="card-body">
+            <h:form id="rescheduleForm">
+              <div class="form-grid">
+                <div class="field">
+                  <label for="rsDate" class="req">New date</label>
+                  <h:inputText id="rsDate" pt:type="date" value="#{staffAppointment.rescheduleDate}" styleClass="input">
+                    <f:convertDateTime pattern="yyyy-MM-dd" type="date" />
+                  </h:inputText>
+                </div>
+                <div class="field">
+                  <label>Available slots</label>
+                  <h:commandButton value="Load slots" action="#{staffAppointment.loadSlots()}" styleClass="btn btn--ghost" />
+                </div>
+                <div class="field field--wide">
+                  <label for="rsSlot" class="req">New time</label>
+                  <h:selectOneMenu id="rsSlot" value="#{staffAppointment.rescheduleSlot}" styleClass="select"
+                                   disabled="#{empty staffAppointment.rescheduleSlots}">
+                    <f:selectItems value="#{staffAppointment.rescheduleSlots}" var="s"
+                                   itemValue="#{s}" itemLabel="#{ux.fmtDateTime(s)}" />
+                    <f:convertDateTime pattern="yyyy-MM-dd'T'HH:mm" type="both" />
+                  </h:selectOneMenu>
+                  <div class="help">Pick a date, load available slots, then choose a new time.</div>
+                </div>
+              </div>
+              <div style="margin-top: 16px;">
+                <h:commandButton value="Confirm reschedule" action="#{staffAppointment.reschedule()}"
+                                 styleClass="btn btn--primary"
+                                 pt:data-confirm="Move this appointment to the selected time?" />
+              </div>
+            </h:form>
+          </div>
+        </section>
+      </ui:fragment>
+    </ui:fragment>
+  </ui:define>
+</ui:composition>
+</html>

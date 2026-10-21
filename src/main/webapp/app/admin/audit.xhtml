@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Audit log" />
+  <ui:define name="title">Audit log</ui:define>
+  <ui:define name="breadcrumb">Admin · Audit log</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{adminAudit.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Audit log</h1>
+        <p class="sub">Every privileged action and state transition, with actor, before/after values, and IP.</p>
+      </div>
+    </div>
+
+    <div class="callout callout--info">
+      The audit log is append-only — records can never be modified or deleted.
+    </div>
+
+    <section class="card">
+      <div class="card-head"><h2>Filters</h2></div>
+      <div class="card-body">
+        <h:form id="auditFilterForm">
+          <div class="filter-bar">
+            <div class="field">
+              <label for="from">From</label>
+              <h:inputText id="from" value="#{adminAudit.from}" styleClass="input" type="date">
+                <f:convertDateTime pattern="yyyy-MM-dd" type="date" />
+              </h:inputText>
+            </div>
+            <div class="field">
+              <label for="to">To</label>
+              <h:inputText id="to" value="#{adminAudit.to}" styleClass="input" type="date">
+                <f:convertDateTime pattern="yyyy-MM-dd" type="date" />
+              </h:inputText>
+            </div>
+            <div class="field">
+              <label for="action">Action</label>
+              <h:selectOneMenu id="action" value="#{adminAudit.action}" styleClass="select">
+                <f:selectItem itemValue="#{null}" itemLabel="All actions" />
+                <f:selectItems value="#{adminAudit.actions}" var="a"
+                               itemValue="#{a}" itemLabel="#{a}" />
+              </h:selectOneMenu>
+            </div>
+            <div class="field">
+              <label for="targetType">Target type</label>
+              <h:selectOneMenu id="targetType" value="#{adminAudit.targetType}" styleClass="select">
+                <f:selectItem itemValue="#{null}" itemLabel="All types" />
+                <f:selectItems value="#{adminAudit.targetTypes}" var="t"
+                               itemValue="#{t}" itemLabel="#{t}" />
+              </h:selectOneMenu>
+            </div>
+            <div class="field grow">
+              <label for="actor">Actor</label>
+              <h:inputText id="actor" value="#{adminAudit.actor}" styleClass="input" maxlength="120"
+                           placeholder="name contains…" />
+            </div>
+            <h:commandButton value="Filter" action="#{adminAudit.filter()}" styleClass="btn" />
+            <h:commandButton value="Clear" action="#{adminAudit.clear()}" styleClass="btn btn--ghost" />
+          </div>
+        </h:form>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>Events</h2></div>
+      <div class="card-body">
+        <ui:fragment rendered="#{empty adminAudit.page.items}">
+          <div class="empty-state">
+            <div class="glyph" aria-hidden="true">⚿</div>
+            <h3>No audit events</h3>
+            <p>Nothing matches the current filters.</p>
+          </div>
+        </ui:fragment>
+        <ui:fragment rendered="#{not empty adminAudit.page.items}">
+          <div class="table-wrap">
+            <table class="data">
+              <thead>
+                <tr><th>Time</th><th>Actor</th><th>Action</th><th>Target</th><th>Before</th><th>After</th><th>IP</th></tr>
+              </thead>
+              <tbody>
+                <ui:repeat value="#{adminAudit.page.items}" var="ev">
+                  <tr>
+                    <td class="cell-nowrap cell-muted">#{ux.fmtDateTime(ev.occurredAt)}</td>
+                    <td>#{ev.actorName} <span class="cell-muted">(#{ux.roleLabel(ev.actorRole)})</span></td>
+                    <td><span class="chip chip--line mono">#{ev.action}</span></td>
+                    <td class="cell-muted">#{ev.targetType} #{ev.targetId}</td>
+                    <td class="cell-muted">#{ux.truncated(ev.beforeValue, 60)}</td>
+                    <td class="cell-muted">#{ux.truncated(ev.afterValue, 60)}</td>
+                    <td class="mono cell-muted">#{ev.ipAddress}</td>
+                  </tr>
+                </ui:repeat>
+              </tbody>
+            </table>
+          </div>
+          <ui:include src="/WEB-INF/includes/pager.xhtml">
+            <ui:param name="pg" value="#{adminAudit.page}" />
+            <ui:param name="bean" value="#{adminAudit}" />
+          </ui:include>
+        </ui:fragment>
+      </div>
+    </section>
+  </ui:define>
+</ui:composition>
+</html>

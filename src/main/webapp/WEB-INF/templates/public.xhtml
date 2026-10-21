@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:ui="jakarta.faces.facelets">
+<h:head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><ui:insert name="title">Oakfield Family Clinic</ui:insert></title>
+  <link rel="stylesheet" href="#{request.contextPath}/resources/css/app.css?v=#{asset.cacheBust()}" />
+</h:head>
+<h:body>
+  <div class="auth-wrap">
+    <section class="auth-brand" aria-label="Welcome">
+      <div>
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span>
+            <span class="brand-name">Oakfield Family Clinic</span><br/>
+            <span class="brand-sub">Patient Portal</span>
+          </span>
+        </div>
+        <h1>Your care,<br/>all in one place.</h1>
+        <p class="lede">Book appointments, message your care team, review visit summaries, and manage prescriptions.</p>
+      </div>
+      <div class="auth-foot">Local demo build · all patient data is generated mock data</div>
+    </section>
+    <section class="auth-panel">
+      <div class="auth-card">
+        <ui:insert name="content" />
+      </div>
+    </section>
+  </div>
+</h:body>
+</html>

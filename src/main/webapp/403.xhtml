@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html">
+<h:head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Access denied · Oakfield Family Clinic</title>
+  <link rel="stylesheet" href="#{request.contextPath}/resources/css/app.css?v=#{asset.cacheBust()}" />
+</h:head>
+<h:body>
+  <div class="auth-wrap">
+    <section class="auth-panel" style="grid-column: 1 / -1;">
+      <div class="auth-card text-center">
+        <div style="font-size: 2.6rem; margin-bottom: 6px;" aria-hidden="true">🔒</div>
+        <h2>You don't have access to this page</h2>
+        <p class="sub">This area is restricted to other roles. If you believe this is a mistake, contact the clinic.</p>
+        <div class="cluster" style="justify-content: center;">
+          <a class="btn btn--primary" href="#{request.contextPath}/app/dashboard.xhtml">Back to my dashboard</a>
+          <a class="btn btn--ghost" href="#{request.contextPath}/login.xhtml">Sign in</a>
+        </div>
+      </div>
+    </section>
+  </div>
+</h:body>
+</html>

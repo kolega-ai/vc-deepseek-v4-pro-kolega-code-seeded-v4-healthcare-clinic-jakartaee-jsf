@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+<ui:composition template="/WEB-INF/templates/public.xhtml">
+  <ui:define name="title">Create your patient account</ui:define>
+  <ui:define name="content">
+    <h2>Create your account</h2>
+    <p class="sub">A few details and you can start managing your care online.</p>
+    <h:messages globalOnly="true" infoClass="alert alert--info" warnClass="alert alert--warning"
+                errorClass="alert alert--error" fatalClass="alert alert--error" styleClass="messages" />
+    <h:form id="registerForm">
+      <div class="form-grid">
+        <div class="field">
+          <label for="firstName" class="req">First name</label>
+          <h:inputText id="firstName" value="#{register.firstName}" styleClass="input" required="true"
+                       requiredMessage="First name is required." maxlength="120" />
+          <h:message for="firstName" styleClass="field-error" />
+        </div>
+        <div class="field">
+          <label for="lastName" class="req">Last name</label>
+          <h:inputText id="lastName" value="#{register.lastName}" styleClass="input" required="true"
+                       requiredMessage="Last name is required." maxlength="120" />
+          <h:message for="lastName" styleClass="field-error" />
+        </div>
+        <div class="field">
+          <label for="dob" class="req">Date of birth</label>
+          <h:inputText id="dob" value="#{register.dateOfBirth}" styleClass="input" type="date"
+                       required="true" requiredMessage="Date of birth is required.">
+            <f:convertDateTime pattern="yyyy-MM-dd" type="date" />
+          </h:inputText>
+          <h:message for="dob" styleClass="field-error" />
+        </div>
+        <div class="field">
+          <label for="gender">Gender</label>
+          <h:selectOneMenu id="gender" value="#{register.gender}" styleClass="select">
+            <f:selectItem itemValue="" itemLabel="Prefer not to say" />
+            <f:selectItem itemValue="F" itemLabel="Female" />
+            <f:selectItem itemValue="M" itemLabel="Male" />
+            <f:selectItem itemValue="X" itemLabel="Non-binary" />
+          </h:selectOneMenu>
+        </div>
+        <div class="field">
+          <label for="email" class="req">Email address</label>
+          <h:inputText id="email" value="#{register.email}" styleClass="input" required="true"
+                       requiredMessage="Email is required." maxlength="255" />
+          <h:message for="email" styleClass="field-error" />
+        </div>
+        <div class="field">
+          <label for="phone">Phone (optional)</label>
+          <h:inputText id="phone" value="#{register.phone}" styleClass="input" maxlength="30" />
+        </div>
+        <div class="field">
+          <label for="password" class="req">Password</label>
+          <h:inputSecret id="password" value="#{register.password}" styleClass="input" required="true"
+                         requiredMessage="Password is required." maxlength="128" />
+          <h:message for="password" styleClass="field-error" />
+          <div class="help">At least 10 characters with an uppercase letter, a lowercase letter, and a digit.</div>
+        </div>
+        <div class="field">
+          <label for="confirm" class="req">Confirm password</label>
+          <h:inputSecret id="confirm" value="#{register.confirmPassword}" styleClass="input" required="true"
+                         requiredMessage="Please repeat the password." maxlength="128" />
+          <h:message for="confirm" styleClass="field-error" />
+        </div>
+      </div>
+      <div style="margin-top: 18px;">
+        <h:commandButton value="Create account" action="#{register.register()}"
+                         styleClass="btn btn--primary btn--lg btn--block" />
+      </div>
+    </h:form>
+    <div class="auth-links">
+      Already have an account? <a href="#{request.contextPath}/login.xhtml">Sign in</a>
+    </div>
+  </ui:define>
+</ui:composition>
+</html>

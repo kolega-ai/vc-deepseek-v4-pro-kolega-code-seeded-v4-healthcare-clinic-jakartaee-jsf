@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Patient" />
+  <ui:define name="title">Patient</ui:define>
+  <ui:define name="breadcrumb">Patient</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{staffPatient.load()}" />
+    </f:metadata>
+
+    <ui:fragment rendered="#{staffPatient.patient == null}">
+      <div class="empty-state">
+        <div class="glyph" aria-hidden="true">◉</div>
+        <h3>Patient not found</h3>
+        <p>This record does not exist or you do not have access to it.</p>
+      </div>
+    </ui:fragment>
+
+    <ui:fragment rendered="#{staffPatient.patient != null}">
+      <div class="page-head">
+        <div>
+          <h1>#{staffPatient.patient.fullName()}</h1>
+          <p class="sub">#{ux.fmtDate(staffPatient.patient.dateOfBirth)} · #{ux.genderLabel(staffPatient.patient.gender)}</p>
+        </div>
+        <div class="page-actions">
+          <ui:fragment rendered="#{appSession.isClinician() or session.isAdmin()}">
+            <a class="btn btn--primary" href="#{request.contextPath}/app/staff/clinician/chart.xhtml?id=#{staffPatient.id}">Open clinical chart</a>
+          </ui:fragment>
+        </div>
+      </div>
+
+      <ui:fragment rendered="#{not empty staffPatient.patient.medicalAlert}">
+        <div class="callout callout--warn">#{staffPatient.patient.medicalAlert}</div>
+      </ui:fragment>
+
+      <div class="grid-2">
+        <section class="card">
+          <div class="card-head"><h2>Contact and insurance</h2></div>
+          <div class="card-body">
+            <div class="detail-grid">
+              <div class="kv"><div class="k">Phone</div><div class="v">#{staffPatient.patient.phone != null ? staffPatient.patient.phone : '—'}</div></div>
+              <div class="kv"><div class="k">Email</div><div class="v">#{staffPatient.patient.email != null ? staffPatient.patient.email : '—'}</div></div>
+              <div class="kv">
+                <div class="k">Address</div>
+                <div class="v">#{staffPatient.patient.addressLine1 != null ? staffPatient.patient.addressLine1 : '—'},
+                  #{staffPatient.patient.city != null ? staffPatient.patient.city : ''} #{staffPatient.patient.state != null ? staffPatient.patient.state : ''}
+                  #{staffPatient.patient.postalCode != null ? staffPatient.patient.postalCode : ''}</div>
+              </div>
+              <div class="kv"><div class="k">Insurance</div><div class="v">#{staffPatient.patient.insuranceProvider != null ? staffPatient.patient.insuranceProvider : '—'}</div></div>
+              <div class="kv"><div class="k">Policy #</div><div class="v">#{staffPatient.patient.insurancePolicyNumber != null ? staffPatient.patient.insurancePolicyNumber : '—'}</div></div>
+              <div class="kv"><div class="k">Group #</div><div class="v">#{staffPatient.patient.insuranceGroupNumber != null ? staffPatient.patient.insuranceGroupNumber : '—'}</div></div>
+              <div class="kv"><div class="k">Emergency contact</div>
+                <div class="v">#{staffPatient.patient.emergencyContactName != null ? staffPatient.patient.emergencyContactName : '—'}
+                  <ui:fragment rendered="#{not empty staffPatient.patient.emergencyContactPhone}">
+                    <span class="cell-muted">(#{staffPatient.patient.emergencyContactPhone})</span>
+                  </ui:fragment>
+                </div>
+              </div>
+              <div class="kv"><div class="k">Primary provider</div>
+                <div class="v">#{staffPatient.patient.primaryProvider != null ? staffPatient.patient.primaryProvider.fullName : '—'}</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <ui:fragment rendered="#{appSession.isFrontDesk() or session.isAdmin()}">
+          <section class="card">
+            <div class="card-head"><h2>Edit demographics</h2></div>
+            <div class="card-body">
+              <h:form id="demoForm">
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="firstName" class="req">First name</label>
+                    <h:inputText id="firstName" value="#{staffPatient.firstName}" styleClass="input" maxlength="120"
+                                 required="true" requiredMessage="First name is required." />
+                    <h:message for="firstName" styleClass="field-error" />
+                  </div>
+                  <div class="field">
+                    <label for="lastName" class="req">Last name</label>
+                    <h:inputText id="lastName" value="#{staffPatient.lastName}" styleClass="input" maxlength="120"
+                                 required="true" requiredMessage="Last name is required." />
+                    <h:message for="lastName" styleClass="field-error" />
+                  </div>
+                  <div class="field">
+                    <label for="dob" class="req">Date of birth</label>
+                    <h:inputText id="dob" pt:type="date" value="#{staffPatient.dateOfBirth}" styleClass="input"
+                                 required="true" requiredMessage="Date of birth is required.">
+                      <f:convertDateTime pattern="yyyy-MM-dd" type="date" />
+                    </h:inputText>
+                    <h:message for="dob" styleClass="field-error" />
+                  </div>
+                  <div class="field">
+                    <label for="gender">Gender</label>
+                    <h:selectOneMenu id="gender" value="#{staffPatient.gender}" styleClass="select">
+                      <f:selectItems value="#{staffPatient.genders}" var="g" itemValue="#{g}" itemLabel="#{ux.genderLabel(g)}" />
+                    </h:selectOneMenu>
+                  </div>
+                  <div class="field">
+                    <label for="phone">Phone</label>
+                    <h:inputText id="phone" value="#{staffPatient.phone}" styleClass="input" maxlength="30" />
+                  </div>
+                  <div class="field">
+                    <label for="email">Email</label>
+                    <h:inputText id="email" value="#{staffPatient.email}" styleClass="input" maxlength="255" />
+                  </div>
+                  <div class="field field--wide">
+                    <label for="address">Street address</label>
+                    <h:inputText id="address" value="#{staffPatient.addressLine1}" styleClass="input" maxlength="200" />
+                  </div>
+                  <div class="field">
+                    <label for="city">City</label>
+                    <h:inputText id="city" value="#{staffPatient.city}" styleClass="input" maxlength="80" />
+                  </div>
+                  <div class="field">
+                    <label for="state">State</label>
+                    <h:inputText id="state" value="#{staffPatient.state}" styleClass="input" maxlength="40" />
+                  </div>
+                  <div class="field">
+                    <label for="postal">Postal code</label>
+                    <h:inputText id="postal" value="#{staffPatient.postalCode}" styleClass="input" maxlength="20" />
+                  </div>
+                  <div class="field">
+                    <label for="ecn">Emergency contact name</label>
+                    <h:inputText id="ecn" value="#{staffPatient.emergencyContactName}" styleClass="input" maxlength="120" />
+                  </div>
+                  <div class="field">
+                    <label for="ecp">Emergency contact phone</label>
+                    <h:inputText id="ecp" value="#{staffPatient.emergencyContactPhone}" styleClass="input" maxlength="30" />
+                  </div>
+                  <div class="field">
+                    <label for="ins">Insurance provider</label>
+                    <h:inputText id="ins" value="#{staffPatient.insuranceProvider}" styleClass="input" maxlength="120" />
+                  </div>
+                  <div class="field">
+                    <label for="pol">Policy number</label>
+                    <h:inputText id="pol" value="#{staffPatient.insurancePolicyNumber}" styleClass="input" maxlength="80" />
+                  </div>
+                  <div class="field">
+                    <label for="grp">Group number</label>
+                    <h:inputText id="grp" value="#{staffPatient.insuranceGroupNumber}" styleClass="input" maxlength="80" />
+                  </div>
+                  <div class="field">
+                    <label for="primProv">Primary provider</label>
+                    <h:selectOneMenu id="primProv" value="#{staffPatient.primaryProviderId}" styleClass="select">
+                      <f:selectItem itemValue="#{null}" itemLabel="None" />
+                      <f:selectItems value="#{staffPatient.providers}" var="p" itemValue="#{p.id}" itemLabel="#{p.fullName()}" />
+                    </h:selectOneMenu>
+                  </div>
+                  <div class="field field--wide">
+                    <label for="alert">Medical alert</label>
+                    <h:inputTextarea id="alert" value="#{staffPatient.medicalAlert}" styleClass="textarea"
+                                     maxlength="500" pt:data-maxlength="500" />
+                  </div>
+                </div>
+                <div style="margin-top: 16px;">
+                  <h:commandButton value="Save demographics" action="#{staffPatient.saveDemographics()}"
+                                   styleClass="btn btn--primary" />
+                </div>
+              </h:form>
+            </div>
+          </section>
+        </ui:fragment>
+
+        <ui:fragment rendered="#{not (session.isFrontDesk() or session.isAdmin())}">
+          <section class="card">
+            <div class="card-head"><h2>Demographics</h2></div>
+            <div class="card-body">
+              <div class="detail-grid">
+                <div class="kv"><div class="k">First name</div><div class="v">#{staffPatient.patient.firstName}</div></div>
+                <div class="kv"><div class="k">Last name</div><div class="v">#{staffPatient.patient.lastName}</div></div>
+                <div class="kv"><div class="k">Date of birth</div><div class="v">#{ux.fmtDate(staffPatient.patient.dateOfBirth)}</div></div>
+                <div class="kv"><div class="k">Gender</div><div class="v">#{ux.genderLabel(staffPatient.patient.gender)}</div></div>
+                <div class="kv"><div class="k">Phone</div><div class="v">#{staffPatient.patient.phone != null ? staffPatient.patient.phone : '—'}</div></div>
+                <div class="kv"><div class="k">Email</div><div class="v">#{staffPatient.patient.email != null ? staffPatient.patient.email : '—'}</div></div>
+                <div class="kv"><div class="k">Street address</div><div class="v">#{staffPatient.patient.addressLine1 != null ? staffPatient.patient.addressLine1 : '—'}</div></div>
+                <div class="kv"><div class="k">City</div><div class="v">#{staffPatient.patient.city != null ? staffPatient.patient.city : '—'}</div></div>
+                <div class="kv"><div class="k">State</div><div class="v">#{staffPatient.patient.state != null ? staffPatient.patient.state : '—'}</div></div>
+                <div class="kv"><div class="k">Postal code</div><div class="v">#{staffPatient.patient.postalCode != null ? staffPatient.patient.postalCode : '—'}</div></div>
+                <div class="kv"><div class="k">Emergency contact</div><div class="v">#{staffPatient.patient.emergencyContactName != null ? staffPatient.patient.emergencyContactName : '—'}</div></div>
+                <div class="kv"><div class="k">Emergency phone</div><div class="v">#{staffPatient.patient.emergencyContactPhone != null ? staffPatient.patient.emergencyContactPhone : '—'}</div></div>
+                <div class="kv"><div class="k">Insurance</div><div class="v">#{staffPatient.patient.insuranceProvider != null ? staffPatient.patient.insuranceProvider : '—'}</div></div>
+                <div class="kv"><div class="k">Policy #</div><div class="v">#{staffPatient.patient.insurancePolicyNumber != null ? staffPatient.patient.insurancePolicyNumber : '—'}</div></div>
+                <div class="kv"><div class="k">Group #</div><div class="v">#{staffPatient.patient.insuranceGroupNumber != null ? staffPatient.patient.insuranceGroupNumber : '—'}</div></div>
+                <div class="kv"><div class="k">Primary provider</div><div class="v">#{staffPatient.patient.primaryProvider != null ? staffPatient.patient.primaryProvider.fullName : '—'}</div></div>
+              </div>
+            </div>
+          </section>
+        </ui:fragment>
+      </div>
+
+      <div class="grid-2">
+        <section class="card">
+          <div class="card-head">
+            <h2>Appointments</h2>
+            <h:link outcome="/app/staff/appointments.xhtml" styleClass="btn btn--ghost btn--sm">
+              <f:param name="patient" value="#{staffPatient.id}" />View all
+            </h:link>
+          </div>
+          <div class="card-body">
+            <ui:fragment rendered="#{empty staffPatient.patientAppointments}">
+              <div class="empty-state"><h3>No appointments</h3></div>
+            </ui:fragment>
+            <div class="stack">
+              <ui:repeat value="#{staffPatient.patientAppointments}" var="a">
+                <div class="row-between" style="border-bottom: 1px solid var(--line-soft); padding-bottom: 8px;">
+                  <div>
+                    <div class="cell-strong">#{ux.fmtDateTime(a.startTime)} · #{a.type.name}</div>
+                    <div class="cell-muted">#{a.provider.fullName()} ·
+                      <span class="#{ux.appointmentBadge(a.status)}">#{ux.appointmentLabel(a.status)}</span></div>
+                  </div>
+                  <h:link outcome="/app/staff/appointment.xhtml" styleClass="btn btn--ghost btn--sm">
+                    <f:param name="id" value="#{a.id}" />Open
+                  </h:link>
+                </div>
+              </ui:repeat>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <h2>Documents</h2>
+            <h:link outcome="/app/staff/documents.xhtml" styleClass="btn btn--ghost btn--sm">
+              <f:param name="patient" value="#{staffPatient.id}" />View all
+            </h:link>
+          </div>
+          <div class="card-body">
+            <ui:fragment rendered="#{empty staffPatient.patientDocuments}">
+              <div class="empty-state"><h3>No documents</h3></div>
+            </ui:fragment>
+            <div class="stack">
+              <ui:repeat value="#{staffPatient.patientDocuments}" var="d">
+                <div class="row-between" style="border-bottom: 1px solid var(--line-soft); padding-bottom: 8px;">
+                  <div>
+                    <div class="cell-strong">#{d.title}</div>
+                    <div class="cell-muted">#{d.category == 'FORM' ? 'Form' : 'Clinical'} ·
+                      <span class="#{ux.docBadge(d.status)}">#{ux.docLabel(d.status)}</span></div>
+                  </div>
+                  <a class="btn btn--ghost btn--sm" href="#{request.contextPath}/app/files/#{d.id}">Download</a>
+                </div>
+              </ui:repeat>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="grid-2">
+        <section class="card">
+          <div class="card-head">
+            <h2>Messages</h2>
+            <h:link outcome="/app/staff/messages.xhtml" styleClass="btn btn--ghost btn--sm">
+              <f:param name="patient" value="#{staffPatient.id}" />View all
+            </h:link>
+          </div>
+          <div class="card-body">
+            <ui:fragment rendered="#{empty staffPatient.patientThreads}">
+              <div class="empty-state"><h3>No conversations</h3></div>
+            </ui:fragment>
+            <div class="stack">
+              <ui:repeat value="#{staffPatient.patientThreads}" var="t">
+                <div class="row-between" style="border-bottom: 1px solid var(--line-soft); padding-bottom: 8px;">
+                  <div>
+                    <div class="cell-strong">#{t.subject}</div>
+                    <div class="cell-muted">Last message #{ux.fmtDateTime(t.lastMessageAt)}</div>
+                  </div>
+                  <h:link outcome="/app/staff/messages.xhtml" styleClass="btn btn--ghost btn--sm">
+                    <f:param name="thread" value="#{t.id}" />Open
+                  </h:link>
+                </div>
+              </ui:repeat>
+            </div>
+          </div>
+        </section>
+
+        <ui:fragment rendered="#{appSession.isFrontDesk() or session.isAdmin()}">
+          <section class="card">
+            <div class="card-head"><h2>Add appointment</h2></div>
+            <div class="card-body">
+              <h:form id="addApptForm">
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="np" class="req">Provider</label>
+                    <h:selectOneMenu id="np" value="#{staffPatient.newApptProviderId}" styleClass="select"
+                                     required="true" requiredMessage="Pick a provider.">
+                      <f:selectItem itemValue="#{null}" itemLabel="Choose…" />
+                      <f:selectItems value="#{staffPatient.providers}" var="p" itemValue="#{p.id}" itemLabel="#{p.fullName()}" />
+                    </h:selectOneMenu>
+                    <h:message for="np" styleClass="field-error" />
+                  </div>
+                  <div class="field">
+                    <label for="nt" class="req">Type</label>
+                    <h:selectOneMenu id="nt" value="#{staffPatient.newApptTypeId}" styleClass="select"
+                                     required="true" requiredMessage="Pick an appointment type.">
+                      <f:selectItem itemValue="#{null}" itemLabel="Choose…" />
+                      <f:selectItems value="#{staffPatient.appointmentTypes}" var="t" itemValue="#{t.id}" itemLabel="#{t.name}" />
+                    </h:selectOneMenu>
+                    <h:message for="nt" styleClass="field-error" />
+                  </div>
+                  <div class="field">
+                    <label for="nd" class="req">Date</label>
+                    <h:inputText id="nd" pt:type="date" value="#{staffPatient.newApptDate}" styleClass="input">
+                      <f:convertDateTime pattern="yyyy-MM-dd" type="date" />
+                    </h:inputText>
+                  </div>
+                  <div class="field">
+                    <label>Available slots</label>
+                    <h:commandButton value="Load slots" action="#{staffPatient.loadNewApptSlots()}" styleClass="btn btn--ghost" />
+                  </div>
+                  <div class="field">
+                    <label for="ns">Time</label>
+                    <h:selectOneMenu id="ns" value="#{staffPatient.newApptSlot}" styleClass="select">
+                      <f:selectItems value="#{staffPatient.newApptSlots}" var="s"
+                                     itemValue="#{s}" itemLabel="#{ux.fmtDateTime(s)}" />
+                      <f:convertDateTime pattern="yyyy-MM-dd'T'HH:mm" type="both" />
+                    </h:selectOneMenu>
+                  </div>
+                  <div class="field field--wide">
+                    <label for="nr" class="req">Reason</label>
+                    <h:inputText id="nr" value="#{staffPatient.newApptReason}" styleClass="input" maxlength="1000"
+                                 required="true" requiredMessage="Reason is required." />
+                    <h:message for="nr" styleClass="field-error" />
+                  </div>
+                </div>
+                <div style="margin-top: 16px;">
+                  <h:commandButton value="Add appointment" action="#{staffPatient.bookNewAppt()}"
+                                   styleClass="btn btn--primary" />
+                </div>
+              </h:form>
+            </div>
+          </section>
+        </ui:fragment>
+      </div>
+    </ui:fragment>
+  </ui:define>
+</ui:composition>
+</html>

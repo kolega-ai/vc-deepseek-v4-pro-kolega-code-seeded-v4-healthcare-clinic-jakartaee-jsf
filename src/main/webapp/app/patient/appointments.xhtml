@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="My appointments" />
+  <ui:define name="title">My appointments</ui:define>
+  <ui:define name="breadcrumb">My appointments</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{ptAppointments.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>My appointments</h1>
+        <p class="sub">Upcoming visits and your appointment history.</p>
+      </div>
+      <div class="page-actions">
+        <a class="btn btn--primary" href="#{request.contextPath}/app/patient/book.xhtml">Book appointment</a>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="card-body">
+        <h:form id="filterForm">
+          <div class="filter-bar">
+            <div class="field">
+              <label for="filterStatus">Status</label>
+              <h:selectOneMenu id="filterStatus" value="#{ptAppointments.status}" styleClass="select">
+                <f:selectItem itemLabel="Upcoming" noSelectionOption="true" />
+                <f:selectItems value="#{ptAppointments.statusOptions}" var="s"
+                               itemValue="#{s}" itemLabel="#{ux.appointmentLabel(s)}" />
+              </h:selectOneMenu>
+            </div>
+            <div class="field">
+              <label for="filterFrom">From</label>
+              <h:inputText id="filterFrom" value="#{ptAppointments.from}" styleClass="input" pt:type="date">
+                <f:convertDateTime pattern="yyyy-MM-dd" type="date" />
+              </h:inputText>
+            </div>
+            <div class="field">
+              <label for="filterTo">To</label>
+              <h:inputText id="filterTo" value="#{ptAppointments.to}" styleClass="input" pt:type="date">
+                <f:convertDateTime pattern="yyyy-MM-dd" type="date" />
+              </h:inputText>
+            </div>
+            <div class="field">
+              <label>&#160;</label>
+              <h:commandButton value="Apply filters" action="#{ptAppointments.filter()}" styleClass="btn" />
+            </div>
+          </div>
+        </h:form>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>Appointments</h2>
+        <span class="text-sm text-muted">#{ptAppointments.page.total} total</span>
+      </div>
+      <div class="card-body">
+        <ui:fragment rendered="#{empty ptAppointments.page.items}">
+          <div class="empty-state">
+            <div class="glyph" aria-hidden="true">▦</div>
+            <h3>No appointments found</h3>
+            <p>Try different filters, or book your next visit.</p>
+            <a class="btn btn--primary" href="#{request.contextPath}/app/patient/book.xhtml">Book appointment</a>
+          </div>
+        </ui:fragment>
+        <ui:fragment rendered="#{not empty ptAppointments.page.items}">
+          <div class="table-wrap">
+            <table class="data">
+              <thead>
+                <tr><th>When</th><th>Provider</th><th>Type</th><th>Status</th><th>Reason</th></tr>
+              </thead>
+              <tbody>
+                <ui:repeat value="#{ptAppointments.page.items}" var="a">
+                  <tr>
+                    <td>
+                      <a class="cell-strong" href="#{request.contextPath}/app/patient/appointment.xhtml?id=#{a.id}">
+                        #{ux.fmtDateTime(a.startTime)}
+                      </a>
+                    </td>
+                    <td>#{a.provider.fullName()}</td>
+                    <td>#{a.type.name}</td>
+                    <td><span class="#{ux.appointmentBadge(a.status)}">#{ux.appointmentLabel(a.status)}</span></td>
+                    <td class="cell-muted">#{ux.truncated(a.reason, 60)}</td>
+                  </tr>
+                </ui:repeat>
+              </tbody>
+            </table>
+          </div>
+        </ui:fragment>
+      </div>
+      <div class="card-foot">
+        <ui:include src="/WEB-INF/includes/pager.xhtml">
+          <ui:param name="pg" value="#{ptAppointments.page}" />
+          <ui:param name="bean" value="#{ptAppointments}" />
+        </ui:include>
+      </div>
+    </section>
+  </ui:define>
+</ui:composition>
+</html>

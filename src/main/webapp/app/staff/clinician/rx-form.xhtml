@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="New prescription" />
+  <ui:define name="title">New prescription</ui:define>
+  <ui:define name="breadcrumb">New prescription</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{rxForm.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>New prescription</h1>
+        <p class="sub">Add a prescription to this patient's chart.</p>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="card-head"><h2>Patient</h2></div>
+      <div class="card-body">
+        <div class="detail-grid">
+          <div class="kv">
+            <div class="k">Patient</div>
+            <div class="v"><a href="#{request.contextPath}/app/staff/clinician/chart.xhtml?id=#{rxForm.patientId}">#{rxForm.patient.fullName()}</a></div>
+          </div>
+          <div class="kv"><div class="k">Date of birth</div><div class="v">#{ux.fmtDate(rxForm.patient.dateOfBirth)}</div></div>
+          <div class="kv"><div class="k">Gender</div><div class="v">#{ux.genderLabel(rxForm.patient.gender)}</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>Prescription</h2></div>
+      <div class="card-body">
+        <h:form id="rxForm">
+          <div class="form-grid">
+            <div class="field">
+              <label for="med" class="req">Medication</label>
+              <h:inputText id="med" value="#{rxForm.medicationName}" styleClass="input" required="true"
+                           requiredMessage="Medication name is required." maxlength="200" />
+              <h:message for="med" styleClass="field-error" />
+            </div>
+            <div class="field">
+              <label for="dosage" class="req">Dosage</label>
+              <h:inputText id="dosage" value="#{rxForm.dosage}" styleClass="input" required="true"
+                           requiredMessage="Dosage is required." maxlength="120" />
+              <h:message for="dosage" styleClass="field-error" />
+            </div>
+            <div class="field">
+              <label for="freq" class="req">Frequency</label>
+              <h:inputText id="freq" value="#{rxForm.frequency}" styleClass="input" required="true"
+                           requiredMessage="Frequency is required." maxlength="120" />
+              <h:message for="freq" styleClass="field-error" />
+            </div>
+            <div class="field">
+              <label for="refills" class="req">Refills remaining</label>
+              <h:inputText id="refills" value="#{rxForm.refillsRemaining}" styleClass="input" required="true"
+                           requiredMessage="Refills remaining is required." maxlength="2">
+                <f:validateLongRange minimum="0" maximum="12" />
+              </h:inputText>
+              <h:message for="refills" styleClass="field-error" />
+              <div class="help">Between 0 and 12.</div>
+            </div>
+            <div class="field">
+              <label for="appt">Related appointment (optional)</label>
+              <h:selectOneMenu id="appt" value="#{rxForm.appointmentId}" styleClass="select">
+                <f:selectItem noSelectionOption="true" itemLabel="None" />
+                <f:selectItems value="#{rxForm.appts}" var="a" itemValue="#{a.id}"
+                               itemLabel="#{ux.fmtDateTime(a.startTime)} — #{a.type.name}" />
+              </h:selectOneMenu>
+            </div>
+            <div class="field field--wide">
+              <label for="instr">Instructions</label>
+              <h:inputTextarea id="instr" value="#{rxForm.instructions}" styleClass="textarea" maxlength="1000" />
+            </div>
+          </div>
+          <div style="margin-top: 16px;">
+            <h:commandButton value="Save prescription" action="#{rxForm.save()}" styleClass="btn btn--primary" />
+            <a class="btn btn--ghost" href="#{request.contextPath}/app/staff/clinician/chart.xhtml?id=#{rxForm.patientId}">Cancel</a>
+          </div>
+        </h:form>
+      </div>
+    </section>
+  </ui:define>
+</ui:composition>
+</html>

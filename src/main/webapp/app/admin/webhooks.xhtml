@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Webhooks" />
+  <ui:define name="title">Webhooks</ui:define>
+  <ui:define name="breadcrumb">Admin · Webhooks</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{adminWebhooks.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Webhooks</h1>
+        <p class="sub">Outbound event subscriptions with delivery attempts, retries, and a demo receiver.</p>
+      </div>
+    </div>
+
+    <div class="callout callout--info">
+      Deliveries are signed with X-Clinic-Signature (HMAC-SHA256). The bundled echo endpoint acts as a local demo receiver.
+    </div>
+
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head"><h2>New subscription</h2></div>
+        <div class="card-body">
+          <h:form id="subForm">
+            <div class="form-grid">
+              <div class="field field--wide">
+                <label for="url" class="req">Endpoint URL</label>
+                <h:inputText id="url" value="#{adminWebhooks.url}" styleClass="input"
+                             required="true" requiredMessage="URL is required." maxlength="500" />
+                <h:message for="url" styleClass="field-error" />
+                <div class="help">http(s) only. For the demo receiver use the local echo endpoint.</div>
+              </div>
+              <div class="field">
+                <label for="secret" class="req">Signing secret</label>
+                <h:inputSecret id="secret" value="#{adminWebhooks.secret}" styleClass="input"
+                               required="true" requiredMessage="Secret is required." maxlength="120" />
+                <h:message for="secret" styleClass="field-error" />
+                <div class="help">8-120 characters.</div>
+              </div>
+              <div class="field field--wide">
+                <label class="req">Events</label>
+                <h:selectManyCheckbox id="events" value="#{adminWebhooks.events}" layout="pageDirection">
+                  <f:selectItems value="#{adminWebhooks.supportedEvents}" var="ev"
+                                 itemValue="#{ev}" itemLabel="#{ev}" />
+                </h:selectManyCheckbox>
+              </div>
+            </div>
+            <div style="margin-top: 16px;">
+              <h:commandButton value="Create subscription" action="#{adminWebhooks.createSubscription()}"
+                               styleClass="btn btn--primary" />
+            </div>
+          </h:form>
+        </div>
+      </section>
+    </div>
+
+    <section class="card">
+      <div class="card-head"><h2>Subscriptions</h2></div>
+      <div class="card-body">
+        <ui:fragment rendered="#{empty adminWebhooks.subs}">
+          <div class="empty-state">
+            <div class="glyph" aria-hidden="true">⇄</div>
+            <h3>No subscriptions</h3>
+            <p>Create one to receive workflow events.</p>
+          </div>
+        </ui:fragment>
+        <ui:fragment rendered="#{not empty adminWebhooks.subs}">
+          <div class="table-wrap">
+            <table class="data">
+              <thead><tr><th>URL</th><th>Events</th><th>Created</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>
+                <ui:repeat value="#{adminWebhooks.subs}" var="w">
+                  <tr>
+                    <td class="cell-strong">#{w.url}</td>
+                    <td><span class="chip chip--line mono">#{w.events}</span></td>
+                    <td class="cell-muted">#{ux.fmtDateTime(w.createdAt)}</td>
+                    <td><span class="#{w.active ? 'badge badge--green' : 'badge badge--gray'}">#{w.active ? 'Active' : 'Disabled'}</span></td>
+                    <td>
+                      <h:form styleClass="row-actions">
+                        <h:commandButton value="Test" action="#{adminWebhooks.test(w.id)}"
+                                         styleClass="btn btn--ghost btn--sm" />
+                        <h:commandButton value="#{w.active ? 'Disable' : 'Enable'}"
+                                         action="#{adminWebhooks.toggle(w.id)}"
+                                         pt:data-confirm="#{w.active ? 'Disable this subscription?' : 'Enable this subscription?'}"
+                                         styleClass="#{w.active ? 'btn btn--danger btn--sm' : 'btn btn--ghost btn--sm'}" />
+                      </h:form>
+                    </td>
+                  </tr>
+                </ui:repeat>
+              </tbody>
+            </table>
+          </div>
+        </ui:fragment>
+      </div>
+    </section>
+
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head"><h2>Deliveries</h2></div>
+        <div class="card-body">
+          <ui:fragment rendered="#{empty adminWebhooks.deliveries}">
+            <div class="empty-state">
+              <div class="glyph" aria-hidden="true">⇄</div>
+              <h3>No deliveries yet</h3>
+            </div>
+          </ui:fragment>
+          <ui:fragment rendered="#{not empty adminWebhooks.deliveries}">
+            <div class="table-wrap">
+              <table class="data">
+                <thead><tr><th>Event</th><th>Status</th><th>Attempts</th><th>Last error</th><th>Time</th></tr></thead>
+                <tbody>
+                  <ui:repeat value="#{adminWebhooks.deliveries}" var="d">
+                    <tr>
+                      <td class="mono">#{d.eventType}</td>
+                      <td><span class="#{ux.deliveryBadge(d.status)}">#{d.status}</span></td>
+                      <td>#{d.attempts}</td>
+                      <td class="cell-muted">#{ux.truncated(d.lastError, 80)}</td>
+                      <td class="cell-muted">#{ux.fmtDateTime(d.createdAt)}</td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </ui:fragment>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>Echo receiver</h2></div>
+        <div class="card-body">
+          <ui:fragment rendered="#{empty adminWebhooks.echoes}">
+            <div class="empty-state">
+              <div class="glyph" aria-hidden="true">⌁</div>
+              <h3>No echoes yet</h3>
+              <p>Payloads received by the local demo endpoint appear here.</p>
+            </div>
+          </ui:fragment>
+          <ui:fragment rendered="#{not empty adminWebhooks.echoes}">
+            <div class="table-wrap">
+              <table class="data">
+                <thead><tr><th>Time</th><th>Signature</th><th>Payload</th></tr></thead>
+                <tbody>
+                  <ui:repeat value="#{adminWebhooks.echoes}" var="ec">
+                    <tr>
+                      <td class="cell-muted">#{ux.fmtDateTime(ec.receivedAt)}</td>
+                      <td class="mono cell-muted">#{ux.truncated(ec.signature, 40)}</td>
+                      <td class="mono cell-muted">#{ux.truncated(ec.payload, 80)}</td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </ui:fragment>
+        </div>
+      </section>
+    </div>
+  </ui:define>
+</ui:composition>
+</html>

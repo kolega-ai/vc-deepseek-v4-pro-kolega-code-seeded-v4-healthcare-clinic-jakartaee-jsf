@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Form verification" />
+  <ui:define name="title">Form verification</ui:define>
+  <ui:define name="breadcrumb">Form verification</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{formVerification.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Form verification</h1>
+        <p class="sub">Review documents patients have uploaded.</p>
+      </div>
+    </div>
+
+    <h:form id="verifyForm">
+      <section class="card">
+        <div class="card-head"><h2>Review notes (shared)</h2></div>
+        <div class="card-body">
+          <div class="grid-2">
+            <div class="field">
+              <label for="verifyNote">Verification note (optional)</label>
+              <h:inputTextarea id="verifyNote" value="#{formVerification.verifyNote}" styleClass="textarea" maxlength="1000" />
+            </div>
+            <div class="field">
+              <label for="rejectNote">Rejection reason (required to reject)</label>
+              <h:inputTextarea id="rejectNote" value="#{formVerification.rejectNote}" styleClass="textarea" maxlength="1000" />
+            </div>
+          </div>
+          <div class="help">Notes apply to the document you act on. Rejecting requires a reason for the patient.</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>Verification queue</h2></div>
+        <div class="card-body">
+          <ui:fragment rendered="#{empty formVerification.queue}">
+            <div class="empty-state">
+              <div class="glyph" aria-hidden="true">▣</div>
+              <h3>Nothing to verify</h3>
+              <p>Submitted forms will appear here for review.</p>
+            </div>
+          </ui:fragment>
+          <ui:fragment rendered="#{not empty formVerification.queue}">
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr><th>Patient</th><th>Title</th><th>Uploaded</th><th>Size</th><th>Status</th><th>Download</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                  <ui:repeat value="#{formVerification.queue}" var="d">
+                    <tr>
+                      <td><a href="#{request.contextPath}/app/staff/patient.xhtml?id=#{d.patient.id}">#{d.patient.fullName()}</a></td>
+                      <td class="cell-strong">#{d.title} <span class="cell-muted">(#{d.originalName})</span></td>
+                      <td class="cell-muted">#{ux.fmtDateTime(d.uploadedAt)}</td>
+                      <td class="cell-muted">#{ux.fileSize(d.sizeBytes)}</td>
+                      <td><span class="#{ux.docBadge(d.status)}">#{ux.docLabel(d.status)}</span></td>
+                      <td><a class="btn btn--ghost btn--sm" href="#{request.contextPath}/app/files/#{d.id}">Download</a></td>
+                      <td>
+                        <div class="row-actions">
+                          <h:commandButton value="Verify" action="#{formVerification.verify(d.id)}" styleClass="btn btn--success btn--sm" />
+                          <h:commandButton value="Reject" action="#{formVerification.reject(d.id)}" styleClass="btn btn--danger btn--sm" />
+                        </div>
+                      </td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </ui:fragment>
+        </div>
+      </section>
+    </h:form>
+  </ui:define>
+</ui:composition>
+</html>

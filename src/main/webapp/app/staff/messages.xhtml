@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Messages" />
+  <ui:define name="title">Messages</ui:define>
+  <ui:define name="breadcrumb">Messages</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{staffMessages.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Messages</h1>
+        <p class="sub">Patient conversations and internal staff notes.</p>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="card-head"><h2>Choose patient</h2></div>
+      <div class="card-body">
+        <h:form id="patientSearchForm">
+          <div class="filter-bar">
+            <div class="field">
+              <label for="patientQuery">Search patients</label>
+              <h:inputText id="patientQuery" value="#{staffMessages.patientQuery}" styleClass="input"
+                           maxlength="120" pt:placeholder="Name or email" />
+            </div>
+            <h:commandButton value="Search" action="#{staffMessages.searchPatients()}" styleClass="btn btn--primary" />
+          </div>
+        </h:form>
+        <ui:fragment rendered="#{not empty staffMessages.patientResults}">
+          <div class="stack" style="margin-top: 12px;">
+            <ui:repeat value="#{staffMessages.patientResults}" var="p">
+              <div class="row-between" style="border-bottom: 1px solid var(--line-soft); padding-bottom: 8px;">
+                <div>
+                  <h:link outcome="/app/staff/messages.xhtml" styleClass="cell-strong">
+                    <f:param name="patient" value="#{p.id}" />#{p.fullName()}
+                  </h:link>
+                  <div class="cell-muted">#{ux.fmtDate(p.dateOfBirth)} · #{p.phone != null ? p.phone : 'No phone on file'}</div>
+                </div>
+              </div>
+            </ui:repeat>
+          </div>
+        </ui:fragment>
+        <ui:fragment rendered="#{empty staffMessages.patientResults and not empty staffMessages.patientQuery}">
+          <p class="cell-muted">No patients matched that search.</p>
+        </ui:fragment>
+      </div>
+    </section>
+
+    <ui:fragment rendered="#{staffMessages.selectedPatientId != null}">
+      <div class="grid-2">
+        <section class="card">
+          <div class="card-head">
+            <h2>New message</h2>
+            <span class="cell-muted">To: #{staffMessages.selectedPatient != null ? staffMessages.selectedPatient.fullName() : ''}</span>
+          </div>
+          <div class="card-body">
+            <h:form id="newThreadForm">
+              <div class="form-grid">
+                <div class="field field--wide">
+                  <label for="newSubject" class="req">Subject</label>
+                  <h:inputText id="newSubject" value="#{staffMessages.newSubject}" styleClass="input" maxlength="200"
+                               required="true" requiredMessage="Subject is required." />
+                  <h:message for="newSubject" styleClass="field-error" />
+                </div>
+                <div class="field field--wide">
+                  <label for="newBody" class="req">Message</label>
+                  <h:inputTextarea id="newBody" value="#{staffMessages.newBody}" styleClass="textarea"
+                                   maxlength="4000" pt:data-maxlength="4000"
+                                   required="true" requiredMessage="Write a message first." />
+                  <h:message for="newBody" styleClass="field-error" />
+                  <div class="help">Starts a new conversation; the patient is notified.</div>
+                </div>
+              </div>
+              <div style="margin-top: 16px;">
+                <h:commandButton value="Send message" action="#{staffMessages.startNewThread()}"
+                                 styleClass="btn btn--primary" />
+              </div>
+            </h:form>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head"><h2>Conversations</h2></div>
+          <div class="card-body">
+            <ui:fragment rendered="#{empty staffMessages.threads}">
+              <div class="empty-state"><h3>No conversations</h3><p>Start one with the form on the left.</p></div>
+            </ui:fragment>
+            <div class="stack">
+              <ui:repeat value="#{staffMessages.threads}" var="t">
+                <div class="row-between" style="border-bottom: 1px solid var(--line-soft); padding-bottom: 8px;">
+                  <div>
+                    <div class="cell-strong">
+                      #{t.subject}
+                      <ui:fragment rendered="#{staffMessages.isUnread(t)}">
+                        <span class="badge badge--teal badge--solid">New</span>
+                      </ui:fragment>
+                    </div>
+                    <div class="cell-muted">Last message #{ux.fmtDateTime(t.lastMessageAt)}</div>
+                  </div>
+                  <h:form id="open_#{t.id}" styleClass="no-space">
+                    <h:commandButton value="Open" action="#{staffMessages.openThread(t.id)}"
+                                     styleClass="btn btn--ghost btn--sm" />
+                  </h:form>
+                </div>
+              </ui:repeat>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <ui:fragment rendered="#{staffMessages.threadView != null}">
+        <section class="card">
+          <div class="card-head">
+            <h2>#{staffMessages.threadView.thread.subject}</h2>
+            <span class="cell-muted">#{staffMessages.threadView.thread.patient.fullName()}</span>
+          </div>
+          <div class="card-body">
+            <div class="timeline">
+              <ui:repeat value="#{staffMessages.threadView.messages}" var="m">
+                <div class="msg #{staffMessages.isMine(m) ? 'msg--out' : ''} #{m.visibility == 'INTERNAL' ? 'msg--internal' : ''}">
+                  <div class="msg-meta">
+                    <span class="who">#{m.visibility == 'INTERNAL' ? 'Staff note' : (staffMessages.isMine(m) ? 'You' : staffMessages.threadView.thread.patient.fullName())}</span>
+                    <span class="cell-muted">#{ux.fmtDateTime(m.createdAt)}</span>
+                    <ui:fragment rendered="#{m.visibility == 'INTERNAL'}">
+                      <span class="internal-tag">Internal</span>
+                    </ui:fragment>
+                  </div>
+                  <div class="msg-body pre-wrap">#{m.body}</div>
+                </div>
+              </ui:repeat>
+            </div>
+
+            <h:form id="replyForm" style="margin-top: 16px;">
+              <div class="form-grid">
+                <div class="field field--wide">
+                  <label for="replyBody" class="req">Reply to patient</label>
+                  <h:inputTextarea id="replyBody" value="#{staffMessages.replyBody}" styleClass="textarea"
+                                   maxlength="4000" pt:data-maxlength="4000"
+                                   required="true" requiredMessage="Write a reply first." />
+                  <h:message for="replyBody" styleClass="field-error" />
+                  <div class="help">Sent to the patient as a normal message.</div>
+                </div>
+              </div>
+              <div style="margin-top: 16px;">
+                <h:commandButton value="Send reply" action="#{staffMessages.reply()}" styleClass="btn btn--primary" />
+              </div>
+            </h:form>
+
+            <h:form id="noteForm" style="margin-top: 16px;">
+              <div class="form-grid">
+                <div class="field field--wide">
+                  <label for="noteBody" class="req">Internal note</label>
+                  <h:inputTextarea id="noteBody" value="#{staffMessages.noteBody}" styleClass="textarea"
+                                   maxlength="4000" pt:data-maxlength="4000"
+                                   required="true" requiredMessage="Write a note first." />
+                  <h:message for="noteBody" styleClass="field-error" />
+                  <div class="help">Internal note — not visible to the patient.</div>
+                </div>
+              </div>
+              <div style="margin-top: 16px;">
+                <h:commandButton value="Add internal note" action="#{staffMessages.addInternalNote()}"
+                                 styleClass="btn btn--secondary" />
+              </div>
+            </h:form>
+          </div>
+        </section>
+      </ui:fragment>
+    </ui:fragment>
+  </ui:define>
+</ui:composition>
+</html>

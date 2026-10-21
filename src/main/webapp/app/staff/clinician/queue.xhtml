@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="My queue" />
+  <ui:define name="title">My queue</ui:define>
+  <ui:define name="breadcrumb">My queue</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{clinicianQueue.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>My queue</h1>
+        <p class="sub">Today's appointments and draft visit summaries.</p>
+      </div>
+      <div class="page-actions">
+        <h:link outcome="/app/staff/clinician/refills.xhtml" styleClass="btn btn--ghost">Refill queue</h:link>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat">
+        <div class="stat-chip teal" aria-hidden="true">▦</div>
+        <div><div class="stat-value">#{clinicianQueue.myToday.size()}</div><div class="stat-label">Appointments today</div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-chip amber" aria-hidden="true">▤</div>
+        <div><div class="stat-value">#{clinicianQueue.drafts.size()}</div><div class="stat-label">Draft summaries</div></div>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="card-head"><h2>Today's appointments</h2></div>
+      <div class="card-body">
+        <ui:fragment rendered="#{empty clinicianQueue.myToday}">
+          <div class="empty-state">
+            <div class="glyph" aria-hidden="true">▦</div>
+            <h3>No appointments today</h3>
+            <p>Your scheduled visits for today will appear here.</p>
+          </div>
+        </ui:fragment>
+        <ui:fragment rendered="#{not empty clinicianQueue.myToday}">
+          <div class="table-wrap">
+            <table class="data">
+              <thead>
+                <tr><th>Time</th><th>Patient</th><th>Type</th><th>Status</th><th>Actions</th></tr>
+              </thead>
+              <tbody>
+                <ui:repeat value="#{clinicianQueue.myToday}" var="a">
+                  <tr>
+                    <td class="cell-strong">#{ux.fmtTime(a.startTime)}</td>
+                    <td><a href="#{request.contextPath}/app/staff/clinician/chart.xhtml?id=#{a.patient.id}">#{a.patient.fullName()}</a></td>
+                    <td>#{a.type.name}</td>
+                    <td><span class="#{ux.appointmentBadge(a.status)}">#{ux.appointmentLabel(a.status)}</span></td>
+                    <td>
+                      <div class="row-actions">
+                        <h:form id="completeForm">
+                          <h:commandButton value="Complete" action="#{clinicianQueue.complete(a.id)}"
+                                           styleClass="btn btn--ghost btn--sm"
+                                           rendered="#{a.status == 'SCHEDULED' or a.status == 'CHECKED_IN'}" />
+                        </h:form>
+                      </div>
+                    </td>
+                  </tr>
+                </ui:repeat>
+              </tbody>
+            </table>
+          </div>
+        </ui:fragment>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>Draft visit summaries</h2></div>
+      <div class="card-body">
+        <ui:fragment rendered="#{empty clinicianQueue.drafts}">
+          <div class="empty-state">
+            <div class="glyph" aria-hidden="true">▤</div>
+            <h3>No draft summaries</h3>
+            <p>Draft summaries you have started will appear here.</p>
+          </div>
+        </ui:fragment>
+        <ui:fragment rendered="#{not empty clinicianQueue.drafts}">
+          <div class="table-wrap">
+            <table class="data">
+              <thead>
+                <tr><th>Patient</th><th>Appointment</th><th>Status</th><th>Actions</th></tr>
+              </thead>
+              <tbody>
+                <ui:repeat value="#{clinicianQueue.drafts}" var="d">
+                  <tr>
+                    <td><a href="#{request.contextPath}/app/staff/clinician/chart.xhtml?id=#{d.patient.id}">#{d.patient.fullName()}</a></td>
+                    <td class="cell-muted">#{ux.fmtDateTime(d.appointment.startTime)} · #{d.appointment.type.name}</td>
+                    <td><span class="#{ux.visitBadge(d.status)}">#{d.status}</span></td>
+                    <td>
+                      <div class="row-actions">
+                        <a class="btn btn--ghost btn--sm"
+                           href="#{request.contextPath}/app/staff/clinician/visit-form.xhtml?summary=#{d.id}">Open in visit form</a>
+                      </div>
+                    </td>
+                  </tr>
+                </ui:repeat>
+              </tbody>
+            </table>
+          </div>
+        </ui:fragment>
+      </div>
+    </section>
+  </ui:define>
+</ui:composition>
+</html>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="#{visitForm.edit ? 'Edit draft summary' : 'Visit summary'}" />
+  <ui:define name="title">#{visitForm.edit ? 'Edit draft summary' : 'Visit summary'}</ui:define>
+  <ui:define name="breadcrumb">Visit summary</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{visitForm.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>#{visitForm.edit ? 'Edit draft summary' : 'Visit summary'}</h1>
+        <p class="sub">#{visitForm.edit ? 'Update the draft visit summary.' : 'Write the visit summary for this completed appointment.'}</p>
+      </div>
+    </div>
+
+    <ui:fragment rendered="#{visitForm.appointment != null}">
+      <section class="card">
+        <div class="card-head"><h2>Appointment</h2></div>
+        <div class="card-body">
+          <div class="detail-grid">
+            <div class="kv">
+              <div class="k">Patient</div>
+              <div class="v"><a href="#{request.contextPath}/app/staff/clinician/chart.xhtml?id=#{visitForm.appointment.patient.id}">#{visitForm.appointment.patient.fullName()}</a></div>
+            </div>
+            <div class="kv"><div class="k">Appointment</div><div class="v">#{ux.fmtDateTime(visitForm.appointment.startTime)}</div></div>
+            <div class="kv"><div class="k">Provider</div><div class="v">#{visitForm.appointment.provider.fullName()}</div></div>
+            <div class="kv"><div class="k">Type</div><div class="v">#{visitForm.appointment.type.name}</div></div>
+          </div>
+        </div>
+      </section>
+    </ui:fragment>
+
+    <section class="card">
+      <div class="card-head"><h2>Summary</h2></div>
+      <div class="card-body">
+        <h:form id="summaryForm">
+          <div class="form-grid">
+            <div class="field field--wide">
+              <label for="diag" class="req">Assessment / plan</label>
+              <h:inputTextarea id="diag" value="#{visitForm.diagnosisText}" styleClass="textarea" required="true"
+                               requiredMessage="Assessment/plan is required." maxlength="4000" pt:data-maxlength="4000" />
+              <h:message for="diag" styleClass="field-error" />
+            </div>
+            <div class="field field--wide">
+              <label for="care">Care instructions</label>
+              <h:inputTextarea id="care" value="#{visitForm.careInstructions}" styleClass="textarea"
+                               maxlength="4000" pt:data-maxlength="4000" />
+            </div>
+            <div class="field field--wide">
+              <label for="follow">Follow-up plan</label>
+              <h:inputTextarea id="follow" value="#{visitForm.followUpPlan}" styleClass="textarea"
+                               maxlength="2000" pt:data-maxlength="2000" />
+            </div>
+            <div class="field field--wide">
+              <label for="followRule">Follow-up rule (optional)</label>
+              <h:inputText id="followRule" value="#{visitForm.followUpRule}" styleClass="input" maxlength="500" />
+              <div class="help">A computed plan, e.g. <code>#patientId != null ? 'recheck in 4 weeks' : 'recheck in 1 week'</code>. Overrides the follow-up plan text.</div>
+            </div>
+            <div class="field field--wide">
+              <label for="notes"><span class="internal-tag">Internal</span> Internal notes — never shown to the patient</label>
+              <h:inputTextarea id="notes" value="#{visitForm.clinicianNotes}" styleClass="textarea"
+                               maxlength="4000" pt:data-maxlength="4000" />
+            </div>
+          </div>
+          <div style="margin-top: 16px;">
+            <h:commandButton value="Save draft" action="#{visitForm.save()}" styleClass="btn btn--primary" />
+            <h:commandButton value="Release to patient" action="#{visitForm.release()}" styleClass="btn btn--success"
+                             rendered="#{visitForm.edit}" />
+          </div>
+        </h:form>
+      </div>
+    </section>
+  </ui:define>
+</ui:composition>
+</html>

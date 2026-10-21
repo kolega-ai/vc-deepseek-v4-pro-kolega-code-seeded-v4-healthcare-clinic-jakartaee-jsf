@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Patients" />
+  <ui:define name="title">Patients</ui:define>
+  <ui:define name="breadcrumb">Patients</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{staffPatients.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Patients</h1>
+        <p class="sub">Find and open patient records.</p>
+      </div>
+    </div>
+
+    <h:form id="filterForm">
+      <div class="filter-bar">
+        <div class="field">
+          <label for="query">Search</label>
+          <h:inputText id="query" value="#{staffPatients.query}" styleClass="input" maxlength="120"
+                       pt:placeholder="Name or email" />
+        </div>
+        <div class="field">
+          <label for="provider">Primary provider</label>
+          <h:selectOneMenu id="provider" value="#{staffPatients.providerId}" styleClass="select">
+            <f:selectItem itemValue="#{null}" itemLabel="All providers" />
+            <f:selectItems value="#{staffPatients.providers}" var="p" itemValue="#{p.id}" itemLabel="#{p.fullName()}" />
+          </h:selectOneMenu>
+        </div>
+        <div class="field">
+          <label for="activeOnly">Active only</label>
+          <h:selectBooleanCheckbox id="activeOnly" value="#{staffPatients.activeOnly}" styleClass="input" />
+        </div>
+        <h:commandButton value="Filter" action="#{staffPatients.filter()}" styleClass="btn btn--primary" />
+        <h:commandButton value="Clear" action="#{staffPatients.clear()}" styleClass="btn btn--ghost" />
+      </div>
+      <div class="filter-bar">
+        <div class="field">
+          <label>Sort</label>
+          <div class="cluster">
+            <h:commandButton value="Name" action="#{staffPatients.sortByName()}" styleClass="btn btn--ghost btn--sm" />
+            <h:commandButton value="Created" action="#{staffPatients.sortByCreated()}" styleClass="btn btn--ghost btn--sm" />
+            <h:commandButton value="Date of birth" action="#{staffPatients.sortByDob()}" styleClass="btn btn--ghost btn--sm" />
+          </div>
+        </div>
+      </div>
+    </h:form>
+
+    <ui:fragment rendered="#{empty staffPatients.page.items}">
+      <div class="empty-state">
+        <div class="glyph" aria-hidden="true">◉</div>
+        <h3>No patients found</h3>
+        <p>Try a different search or clear the filters.</p>
+      </div>
+    </ui:fragment>
+
+    <ui:fragment rendered="#{not empty staffPatients.page.items}">
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr>
+              <th>Name</th><th>DOB</th><th>Phone</th><th>Email</th><th>Primary provider</th><th>Open</th>
+            </tr>
+          </thead>
+          <tbody>
+            <ui:repeat value="#{staffPatients.page.items}" var="p">
+              <tr>
+                <td class="cell-strong">
+                  <a href="#{request.contextPath}/app/staff/patient.xhtml?id=#{p.id}">#{p.fullName()}</a>
+                </td>
+                <td class="cell-nowrap">#{ux.fmtDate(p.dateOfBirth)}</td>
+                <td>#{p.phone != null ? p.phone : '—'}</td>
+                <td>#{p.email != null ? p.email : '—'}</td>
+                <td>#{p.primaryProvider != null ? p.primaryProvider.fullName : '—'}</td>
+                <td>
+                  <div class="row-actions">
+                    <h:link outcome="/app/staff/patient.xhtml" styleClass="btn btn--ghost btn--sm">
+                      <f:param name="id" value="#{p.id}" />Open
+                    </h:link>
+                  </div>
+                </td>
+              </tr>
+            </ui:repeat>
+          </tbody>
+        </table>
+      </div>
+
+      <ui:include src="/WEB-INF/includes/pager.xhtml">
+        <ui:param name="pg" value="#{staffPatients.page}" />
+        <ui:param name="bean" value="#{staffPatients}" />
+      </ui:include>
+    </ui:fragment>
+  </ui:define>
+</ui:composition>
+</html>

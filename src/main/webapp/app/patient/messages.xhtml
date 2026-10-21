@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Messages" />
+  <ui:define name="title">Messages</ui:define>
+  <ui:define name="breadcrumb">Messages</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{ptMessages.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Messages</h1>
+        <p class="sub">Ask questions and talk to the clinic securely.</p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head">
+          <h2>Conversations</h2>
+          <span class="text-sm text-muted">#{ptMessages.unreadCount} unread</span>
+        </div>
+        <div class="card-body">
+          <ui:fragment rendered="#{empty ptMessages.myThreads}">
+            <div class="empty-state">
+              <div class="glyph" aria-hidden="true">✉</div>
+              <h3>No conversations yet</h3>
+              <p>Start a new message to get in touch with the clinic.</p>
+            </div>
+          </ui:fragment>
+          <ui:fragment rendered="#{not empty ptMessages.myThreads}">
+            <h:form id="threadsForm">
+              <div class="stack">
+                <ui:repeat value="#{ptMessages.myThreads}" var="t">
+                  <h:commandLink action="#{ptMessages.openThread(t.id)}"
+                                 styleClass="row-between"
+                                 style="border-bottom: 1px solid var(--line-soft); padding: 10px 0; text-decoration: none;">
+                    <div>
+                      <div class="cell-strong">
+                        <ui:fragment rendered="#{ptMessages.isUnread(t.id)}">
+                          <span class="badge badge--teal badge--solid" style="margin-right: 6px;">New</span>
+                        </ui:fragment>
+                        #{t.subject}
+                      </div>
+                      <div class="cell-muted">#{t.patient.fullName()} · #{ux.fmtDateTime(t.lastMessageAt)}</div>
+                    </div>
+                  </h:commandLink>
+                </ui:repeat>
+              </div>
+            </h:form>
+          </ui:fragment>
+        </div>
+      </section>
+
+      <div class="stack">
+        <ui:fragment rendered="#{ptMessages.threadView != null}">
+          <section class="card">
+            <div class="card-head"><h2>#{ptMessages.threadView.thread.subject}</h2></div>
+            <div class="card-body">
+              <div class="timeline">
+                <ui:repeat value="#{ptMessages.threadView.messages}" var="m">
+                  <div class="msg #{ptMessages.isOut(m) ? 'msg--out' : ''}">
+                    <div class="msg-meta">
+                      <span class="who">#{ptMessages.isOut(m) ? 'You' : 'Clinic'}</span>
+                      <span>#{ux.fmtDateTime(m.createdAt)}</span>
+                    </div>
+                    <div class="msg-body">#{m.body}</div>
+                  </div>
+                </ui:repeat>
+              </div>
+              <h:form id="replyForm" style="margin-top: 16px;">
+                <div class="field">
+                  <label for="replyBody" class="req">Reply</label>
+                  <h:inputTextarea id="replyBody" value="#{ptMessages.replyBody}" styleClass="textarea"
+                                   required="true" requiredMessage="Write a reply first." maxlength="4000" />
+                  <h:message for="replyBody" styleClass="field-error" />
+                </div>
+                <div style="margin-top: 16px;">
+                  <h:commandButton value="Send reply" action="#{ptMessages.reply()}" styleClass="btn btn--primary" />
+                </div>
+              </h:form>
+            </div>
+          </section>
+        </ui:fragment>
+        <ui:fragment rendered="#{ptMessages.threadView == null}">
+          <section class="card">
+            <div class="card-body">
+              <div class="empty-state">
+                <div class="glyph" aria-hidden="true">✉</div>
+                <h3>No conversation selected</h3>
+                <p>Open a conversation on the left, or start a new one below.</p>
+              </div>
+            </div>
+          </section>
+        </ui:fragment>
+
+        <section class="card">
+          <div class="card-head"><h2>New message</h2></div>
+          <div class="card-body">
+            <h:form id="newThreadForm">
+              <div class="form-grid">
+                <div class="field field--wide">
+                  <label for="newSubject" class="req">Subject</label>
+                  <h:inputText id="newSubject" value="#{ptMessages.newSubject}" styleClass="input"
+                               required="true" requiredMessage="Give your message a subject." maxlength="200" />
+                  <h:message for="newSubject" styleClass="field-error" />
+                </div>
+                <div class="field field--wide">
+                  <label for="newBody" class="req">Message</label>
+                  <h:inputTextarea id="newBody" value="#{ptMessages.newBody}" styleClass="textarea"
+                                   required="true" requiredMessage="Write a message first." maxlength="4000" />
+                  <h:message for="newBody" styleClass="field-error" />
+                </div>
+              </div>
+              <div style="margin-top: 16px;">
+                <h:commandButton value="Send message" action="#{ptMessages.sendNew()}" styleClass="btn btn--primary" />
+              </div>
+            </h:form>
+          </div>
+        </section>
+      </div>
+    </div>
+  </ui:define>
+</ui:composition>
+</html>

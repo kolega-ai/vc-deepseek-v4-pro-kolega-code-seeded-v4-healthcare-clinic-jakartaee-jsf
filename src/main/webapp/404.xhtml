@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html">
+<h:head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Page not found · Oakfield Family Clinic</title>
+  <link rel="stylesheet" href="#{request.contextPath}/resources/css/app.css?v=#{asset.cacheBust()}" />
+</h:head>
+<h:body>
+  <div class="auth-wrap">
+    <section class="auth-panel" style="grid-column: 1 / -1;">
+      <div class="auth-card text-center">
+        <h2>We couldn't find that page</h2>
+        <p class="sub">The address may be mistyped or the page may have moved.</p>
+        <div class="cluster" style="justify-content: center;">
+          <a class="btn btn--primary" href="#{request.contextPath}/app/dashboard.xhtml">Back to my dashboard</a>
+        </div>
+      </div>
+    </section>
+  </div>
+</h:body>
+</html>

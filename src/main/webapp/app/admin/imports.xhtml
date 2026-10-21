@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Imports" />
+  <ui:define name="title">Imports</ui:define>
+  <ui:define name="breadcrumb">Admin · Imports</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{adminImports.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Imports</h1>
+        <p class="sub">Bring patient records in via CSV. Rows are validated server-side; errors get a report.</p>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="card-head"><h2>Import patient CSV</h2></div>
+      <div class="card-body">
+        <h:form id="uploadForm" enctype="multipart/form-data">
+          <div class="form-grid">
+            <div class="field field--wide">
+              <label for="file" class="req">CSV file</label>
+              <h:inputFile id="file" value="#{adminImports.file}" styleClass="input"
+                           required="true" requiredMessage="Pick a CSV file." />
+              <h:message for="file" styleClass="field-error" />
+              <div class="help">
+                Use the exact 16-column header from the template —
+                <a href="#{request.contextPath}/resources/csv/patients-template.csv">Download CSV template</a>.
+              </div>
+            </div>
+          </div>
+          <div style="margin-top: 16px;">
+            <h:commandButton value="Upload and import" action="#{adminImports.importCsv()}"
+                             styleClass="btn btn--primary" />
+          </div>
+        </h:form>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>Preview a CSV</h2></div>
+      <div class="card-body">
+        <h:form id="previewForm" enctype="multipart/form-data">
+          <div class="field field--wide">
+            <label for="previewFile">CSV file</label>
+            <h:inputFile id="previewFile" value="#{adminImports.previewFile}" styleClass="input" />
+            <div class="help">Shows the first row exactly as parsed, to confirm the columns.</div>
+          </div>
+          <div style="margin-top: 12px;">
+            <h:commandButton value="Preview first row" action="#{adminImports.preview()}"
+                             styleClass="btn btn--ghost btn--sm" />
+          </div>
+        </h:form>
+        <ui:fragment rendered="#{not empty adminImports.previewHtml}">
+          <div class="callout" style="margin-top: 16px;">
+            <h:outputText value="#{adminImports.previewHtml}" escape="false" />
+          </div>
+        </ui:fragment>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>Recent imports</h2></div>
+      <div class="card-body">
+        <ui:fragment rendered="#{empty adminImports.recentJobs}">
+          <div class="empty-state">
+            <div class="glyph" aria-hidden="true">⇧</div>
+            <h3>No imports yet</h3>
+            <p>Upload a CSV to get started.</p>
+          </div>
+        </ui:fragment>
+        <ui:fragment rendered="#{not empty adminImports.recentJobs}">
+          <div class="table-wrap">
+            <table class="data">
+              <thead>
+                <tr><th>File</th><th>Status</th><th>Total</th><th>Success</th><th>Errors</th><th>Created</th><th>Report</th></tr>
+              </thead>
+              <tbody>
+                <ui:repeat value="#{adminImports.recentJobs}" var="job">
+                  <tr>
+                    <td class="cell-strong">#{job.originalName}</td>
+                    <td><span class="#{ux.jobBadge(job.status)}">#{job.status}</span></td>
+                    <td>#{job.totalRows}</td>
+                    <td>#{job.successRows}</td>
+                    <td>#{job.errorRows}</td>
+                    <td class="cell-muted">#{ux.fmtDateTime(job.createdAt)}</td>
+                    <td>
+                      <ui:fragment rendered="#{job.errorRows gt 0}">
+                        <a class="btn btn--ghost btn--sm"
+                           href="#{request.contextPath}/app/imports/errors/#{job.id}">Error report</a>
+                      </ui:fragment>
+                      <ui:fragment rendered="#{job.errorRows == 0}">
+                        <span class="cell-muted">—</span>
+                      </ui:fragment>
+                    </td>
+                  </tr>
+                </ui:repeat>
+              </tbody>
+            </table>
+          </div>
+        </ui:fragment>
+      </div>
+    </section>
+  </ui:define>
+</ui:composition>
+</html>

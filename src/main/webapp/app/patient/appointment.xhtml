@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Appointment" />
+  <ui:define name="title">Appointment</ui:define>
+  <ui:define name="breadcrumb">Appointment</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{ptAppointment.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Appointment</h1>
+        <p class="sub">
+          <h:link outcome="/app/patient/appointments.xhtml" styleClass="text-sm">‹ Back to my appointments</h:link>
+        </p>
+      </div>
+    </div>
+
+    <ui:fragment rendered="#{ptAppointment.appt == null}">
+      <section class="card">
+        <div class="card-body">
+          <div class="empty-state">
+            <div class="glyph" aria-hidden="true">▦</div>
+            <h3>Appointment not found</h3>
+            <p>It may have been removed, or the link is invalid.</p>
+          </div>
+        </div>
+      </section>
+    </ui:fragment>
+
+    <ui:fragment rendered="#{ptAppointment.appt != null}">
+      <div class="grid-2">
+        <section class="card">
+          <div class="card-head">
+            <h2>Details</h2>
+            <span class="#{ux.appointmentBadge(ptAppointment.appt.status)}">#{ux.appointmentLabel(ptAppointment.appt.status)}</span>
+          </div>
+          <div class="card-body">
+            <div class="detail-grid">
+              <div class="kv"><div class="k">When</div><div class="v">#{ux.fmtDateTime(ptAppointment.appt.startTime)}</div></div>
+              <div class="kv"><div class="k">Provider</div><div class="v">#{ptAppointment.appt.provider.fullName()}</div></div>
+              <div class="kv"><div class="k">Type</div><div class="v">#{ptAppointment.appt.type.name}</div></div>
+              <div class="kv"><div class="k">Reason</div><div class="v">#{ptAppointment.appt.reason}</div></div>
+              <div class="kv"><div class="k">Notes</div><div class="v pre-wrap">#{ptAppointment.appt.notes}</div></div>
+              <ui:fragment rendered="#{ptAppointment.appt.cancelledReason != null}">
+                <div class="kv"><div class="k">Cancelled reason</div><div class="v">#{ptAppointment.appt.cancelledReason}</div></div>
+              </ui:fragment>
+            </div>
+          </div>
+        </section>
+
+        <div class="stack">
+          <ui:fragment rendered="#{ptAppointment.canCancel}">
+            <section class="card">
+              <div class="card-head"><h2>Cancel appointment</h2></div>
+              <div class="card-body">
+                <h:form id="cancelForm" pt:data-confirm="Really cancel this appointment?">
+                  <div class="field">
+                    <label for="cancelReason" class="req">Reason for cancelling</label>
+                    <h:inputTextarea id="cancelReason" value="#{ptAppointment.cancelReason}" styleClass="textarea"
+                                     required="true" requiredMessage="Please tell us why you are cancelling."
+                                     maxlength="500" />
+                    <h:message for="cancelReason" styleClass="field-error" />
+                  </div>
+                  <div style="margin-top: 16px;">
+                    <h:commandButton value="Cancel appointment" action="#{ptAppointment.cancel()}"
+                                     styleClass="btn btn--danger" />
+                  </div>
+                </h:form>
+              </div>
+            </section>
+          </ui:fragment>
+
+          <ui:fragment rendered="#{ptAppointment.canReschedule}">
+            <section class="card">
+              <div class="card-head"><h2>Reschedule</h2></div>
+              <div class="card-body">
+                <h:form id="rescheduleForm">
+                  <div class="form-grid">
+                    <div class="field">
+                      <label for="rsProvider">Provider</label>
+                      <h:selectOneMenu id="rsProvider" value="#{ptAppointment.providerId}" styleClass="select"
+                                       required="true" requiredMessage="Choose a provider.">
+                        <f:selectItems value="#{ptAppointment.providers}" var="p"
+                                       itemValue="#{p.id}" itemLabel="#{p.fullName()}" />
+                      </h:selectOneMenu>
+                      <h:message for="rsProvider" styleClass="field-error" />
+                    </div>
+                    <div class="field">
+                      <label for="rsType">Appointment type</label>
+                      <h:selectOneMenu id="rsType" value="#{ptAppointment.typeId}" styleClass="select"
+                                       required="true" requiredMessage="Choose an appointment type.">
+                        <f:selectItems value="#{ptAppointment.types}" var="t"
+                                       itemValue="#{t.id}" itemLabel="#{t.name}" />
+                      </h:selectOneMenu>
+                      <h:message for="rsType" styleClass="field-error" />
+                    </div>
+                    <div class="field">
+                      <label for="rsDate" class="req">New date</label>
+                      <h:inputText id="rsDate" value="#{ptAppointment.slotDate}" styleClass="input" pt:type="date"
+                                   required="true" requiredMessage="Pick a date.">
+                        <f:convertDateTime pattern="yyyy-MM-dd" type="date" />
+                      </h:inputText>
+                      <h:message for="rsDate" styleClass="field-error" />
+                    </div>
+                    <div class="field">
+                      <label>&#160;</label>
+                      <h:commandButton value="Load slots" action="#{ptAppointment.loadSlots()}"
+                                       styleClass="btn btn--ghost" />
+                    </div>
+                    <div class="field field--wide">
+                      <label for="rsSlot">Available slot</label>
+                      <h:selectOneMenu id="rsSlot" value="#{ptAppointment.newStart}" styleClass="select">
+                        <f:selectItems value="#{ptAppointment.availableSlots()}" var="s"
+                                       itemValue="#{s}" itemLabel="#{ux.fmtDateTime(s)}" />
+                        <f:convertDateTime pattern="yyyy-MM-dd'T'HH:mm" />
+                      </h:selectOneMenu>
+                      <div class="help">Pick a date and load the available slots.</div>
+                    </div>
+                    <div class="field field--wide">
+                      <label for="rsReason" class="req">Reason for the new time</label>
+                      <h:inputTextarea id="rsReason" value="#{ptAppointment.rescheduleReason}" styleClass="textarea"
+                                       maxlength="1000" />
+                      <div class="help">Required - tell the clinic why you are changing the appointment.</div>
+                    </div>
+                  </div>
+                  <div style="margin-top: 16px;">
+                    <h:commandButton value="Request reschedule" action="#{ptAppointment.reschedule()}"
+                                     styleClass="btn btn--primary" />
+                  </div>
+                </h:form>
+              </div>
+            </section>
+          </ui:fragment>
+        </div>
+      </div>
+    </ui:fragment>
+  </ui:define>
+</ui:composition>
+</html>

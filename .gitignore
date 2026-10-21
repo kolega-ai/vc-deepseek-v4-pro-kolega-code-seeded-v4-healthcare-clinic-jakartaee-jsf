@@ -1,0 +1,15 @@
+target/
+*.class
+*.log
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+.DS_Store
+# Local runtime data (uploads/exports are stored under the compose volume by default)
+data/
+scratch/
+# Maven wrapper jar is downloaded on demand (script-only distribution)
+.mvn/wrapper/maven-wrapper.jar

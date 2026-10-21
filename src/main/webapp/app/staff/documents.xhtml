@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:pt="http://xmlns.jcp.org/jsf/passthrough">
+<ui:composition template="/WEB-INF/templates/layout.xhtml">
+  <ui:param name="pageTitle" value="Documents" />
+  <ui:define name="title">Documents</ui:define>
+  <ui:define name="breadcrumb">Documents</ui:define>
+
+  <ui:define name="content">
+    <f:metadata>
+      <f:viewAction action="#{staffDocuments.load()}" />
+    </f:metadata>
+
+    <div class="page-head">
+      <div>
+        <h1>Documents</h1>
+        <p class="sub">Patient forms and clinical documents, with review workflow.</p>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="card-head"><h2>Upload document</h2></div>
+      <div class="card-body">
+        <h:form id="uploadForm" enctype="multipart/form-data">
+          <div class="form-grid">
+            <div class="field">
+              <label for="upCat" class="req">Category</label>
+              <h:selectOneMenu id="upCat" value="#{staffDocuments.uploadCategory}" styleClass="select"
+                               required="true" requiredMessage="Pick a category.">
+                <f:selectItem itemValue="FORM" itemLabel="Form" />
+                <f:selectItem itemValue="CLINICAL" itemLabel="Clinical" />
+              </h:selectOneMenu>
+              <h:message for="upCat" styleClass="field-error" />
+            </div>
+            <div class="field">
+              <label for="upPatient" class="req">Patient</label>
+              <h:selectOneMenu id="upPatient" value="#{staffDocuments.uploadPatientId}" styleClass="select"
+                               required="true" requiredMessage="Pick a patient.">
+                <f:selectItem itemValue="#{null}" itemLabel="Choose a patient…" />
+                <f:selectItems value="#{staffDocuments.uploadPatients}" var="p"
+                               itemValue="#{p.id}" itemLabel="#{p.fullName()}" />
+              </h:selectOneMenu>
+              <h:message for="upPatient" styleClass="field-error" />
+              <div class="help">First 50 active patients.</div>
+            </div>
+            <div class="field field--wide">
+              <label for="upTitle" class="req">Title</label>
+              <h:inputText id="upTitle" value="#{staffDocuments.title}" styleClass="input" maxlength="200"
+                           required="true" requiredMessage="Title is required." />
+              <h:message for="upTitle" styleClass="field-error" />
+            </div>
+            <div class="field field--wide">
+              <label for="upDesc">Description</label>
+              <h:inputTextarea id="upDesc" value="#{staffDocuments.description}" styleClass="textarea"
+                               maxlength="1000" pt:data-maxlength="1000" />
+            </div>
+            <div class="field field--wide">
+              <label for="upFile" class="req">File</label>
+              <h:inputFile id="upFile" value="#{staffDocuments.file}"
+                           required="true" requiredMessage="Choose a file." />
+              <h:message for="upFile" styleClass="field-error" />
+              <div class="help">PDF, PNG, or JPG for forms; TXT/CSV also accepted for clinical documents. Max 10 MB.</div>
+            </div>
+          </div>
+          <div style="margin-top: 16px;">
+            <h:commandButton value="Upload" action="#{staffDocuments.upload()}" styleClass="btn btn--primary" />
+          </div>
+        </h:form>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>Scanner station</h2></div>
+      <div class="card-body">
+        <p class="sub">Drop a page from the front-desk scanner onto the chart. The scanner names each page by accession.</p>
+        <h:form id="scanForm" enctype="multipart/form-data">
+          <div class="form-grid">
+            <div class="field">
+              <label for="scanPatient" class="req">Patient</label>
+              <h:selectOneMenu id="scanPatient" value="#{staffDocuments.scanPatientId}" styleClass="select"
+                               required="true" requiredMessage="Pick a patient.">
+                <f:selectItem itemValue="#{null}" itemLabel="Choose a patient…" />
+                <f:selectItems value="#{staffDocuments.uploadPatients}" var="p"
+                               itemValue="#{p.id}" itemLabel="#{p.fullName()}" />
+              </h:selectOneMenu>
+              <h:message for="scanPatient" styleClass="field-error" />
+            </div>
+            <div class="field field--wide">
+              <label for="scanFile" class="req">Scanned page</label>
+              <h:inputFile id="scanFile" value="#{staffDocuments.scanFile}" required="true"
+                           requiredMessage="Choose the scanned page." />
+              <h:message for="scanFile" styleClass="field-error" />
+            </div>
+          </div>
+          <div style="margin-top: 16px;">
+            <h:commandButton value="File scan" action="#{staffDocuments.storeScan()}" styleClass="btn btn--primary" />
+          </div>
+        </h:form>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>Fax a referral</h2></div>
+      <div class="card-body">
+        <p class="sub">Send a referral packet to a specialist practice through the clinic fax gateway.</p>
+        <h:form id="faxForm" enctype="multipart/form-data">
+          <div class="form-grid">
+            <div class="field">
+              <label for="faxNumber" class="req">Fax number</label>
+              <h:inputText id="faxNumber" value="#{staffDocuments.faxNumber}" styleClass="input" maxlength="20"
+                           required="true" requiredMessage="Enter the destination fax number." />
+              <h:message for="faxNumber" styleClass="field-error" />
+            </div>
+            <div class="field field--wide">
+              <label for="faxFile" class="req">Document to fax</label>
+              <h:inputFile id="faxFile" value="#{staffDocuments.faxFile}" required="true"
+                           requiredMessage="Attach the document to fax." />
+              <h:message for="faxFile" styleClass="field-error" />
+            </div>
+          </div>
+          <div style="margin-top: 16px;">
+            <h:commandButton value="Send fax" action="#{staffDocuments.faxReferral()}" styleClass="btn btn--primary" />
+          </div>
+        </h:form>
+      </div>
+    </section>
+
+    <h:form id="filterForm">
+      <div class="filter-bar">
+        <div class="field">
+          <label for="patientId">Patient id</label>
+          <h:inputText id="patientId" value="#{staffDocuments.patientId}" styleClass="input" maxlength="10">
+            <f:convertNumber integerOnly="true" />
+          </h:inputText>
+        </div>
+        <div class="field">
+          <label for="category">Category</label>
+          <h:selectOneMenu id="category" value="#{staffDocuments.category}" styleClass="select">
+            <f:selectItem itemValue="#{null}" itemLabel="All categories" />
+            <f:selectItems value="#{staffDocuments.categories}" var="c"
+                           itemValue="#{c}" itemLabel="#{staffDocuments.catLabel(c)}" />
+          </h:selectOneMenu>
+        </div>
+        <div class="field">
+          <label for="status">Status</label>
+          <h:selectOneMenu id="status" value="#{staffDocuments.status}" styleClass="select">
+            <f:selectItem itemValue="#{null}" itemLabel="All statuses" />
+            <f:selectItems value="#{staffDocuments.statuses}" var="s"
+                           itemValue="#{s}" itemLabel="#{ux.docLabel(s)}" />
+          </h:selectOneMenu>
+        </div>
+        <div class="field">
+          <label for="query">Title search</label>
+          <h:inputText id="query" value="#{staffDocuments.query}" styleClass="input" maxlength="120" />
+        </div>
+        <h:commandButton value="Filter" action="#{staffDocuments.filter()}" styleClass="btn btn--primary" />
+        <h:commandButton value="Clear" action="#{staffDocuments.clear()}" styleClass="btn btn--ghost" />
+      </div>
+    </h:form>
+
+    <ui:fragment rendered="#{empty staffDocuments.page.items}">
+      <div class="empty-state">
+        <div class="glyph" aria-hidden="true">▣</div>
+        <h3>No documents found</h3>
+        <p>Upload a document above or adjust the filters.</p>
+      </div>
+    </ui:fragment>
+
+    <ui:fragment rendered="#{not empty staffDocuments.page.items}">
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr>
+              <th>Patient</th><th>Title</th><th>Category</th><th>Uploaded</th><th>Size</th>
+              <th>Status</th><th>Review note</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <ui:repeat value="#{staffDocuments.page.items}" var="d">
+              <tr>
+                <td><a href="#{request.contextPath}/app/staff/patient.xhtml?id=#{d.patient.id}">#{d.patient.fullName()}</a></td>
+                <td class="cell-strong">#{d.title}</td>
+                <td>#{staffDocuments.catLabel(d.category)}</td>
+                <td class="cell-nowrap cell-muted">#{ux.fmtDateTime(d.uploadedAt)}</td>
+                <td class="cell-nowrap">#{ux.fileSize(d.sizeBytes)}</td>
+                <td><span class="#{ux.docBadge(d.status)}">#{ux.docLabel(d.status)}</span></td>
+                <td class="cell-muted">#{d.reviewNote != null ? ux.truncated(d.reviewNote, 80) : '—'}</td>
+                <td>
+                  <div class="row-actions">
+                    <a class="btn btn--ghost btn--sm" href="#{request.contextPath}/app/files/#{d.id}">Download</a>
+                    <ui:fragment rendered="#{d.status == 'SUBMITTED' and (session.isFrontDesk() or session.isAdmin())}">
+                      <h:form id="v_#{d.id}" styleClass="no-space">
+                        <h:commandButton value="Verify" action="#{staffDocuments.verify(d.id)}"
+                                         styleClass="btn btn--ghost btn--sm btn--success" />
+                      </h:form>
+                      <h:form id="r_#{d.id}" styleClass="no-space">
+                        <h:inputText value="#{staffDocuments.reviewNote}" styleClass="input" maxlength="1000"
+                                     required="true" requiredMessage="A rejection note is required."
+                                     pt:placeholder="Rejection note" />
+                        <h:commandButton value="Reject" action="#{staffDocuments.reject(d.id)}"
+                                         styleClass="btn btn--ghost btn--sm btn--danger"
+                                         pt:data-confirm="Reject this document?" />
+                      </h:form>
+                    </ui:fragment>
+                    <ui:fragment rendered="#{d.status == 'VERIFIED' and (session.isFrontDesk() or session.isAdmin())}">
+                      <h:form id="a_#{d.id}" styleClass="no-space">
+                        <h:commandButton value="Archive" action="#{staffDocuments.archive(d.id)}"
+                                         styleClass="btn btn--ghost btn--sm"
+                                         pt:data-confirm="Archive this document?" />
+                      </h:form>
+                    </ui:fragment>
+                  </div>
+                </td>
+              </tr>
+            </ui:repeat>
+          </tbody>
+        </table>
+      </div>
+
+      <ui:include src="/WEB-INF/includes/pager.xhtml">
+        <ui:param name="pg" value="#{staffDocuments.page}" />
+        <ui:param name="bean" value="#{staffDocuments}" />
+      </ui:include>
+    </ui:fragment>
+  </ui:define>
+</ui:composition>
+</html>
